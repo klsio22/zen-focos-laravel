@@ -4,10 +4,18 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\PomodoroController;
 
+// Rota pública - página de boas-vindas
+Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('home');
+    }
+    return view('welcome');
+})->name('welcome');
+
 Auth::routes();
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/', [TaskController::class, 'index'])->name('home');
+    Route::get('/home', [TaskController::class, 'index'])->name('home');
 
     // Tasks Routes
     Route::resource('tasks', TaskController::class);
