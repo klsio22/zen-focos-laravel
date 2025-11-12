@@ -51,19 +51,7 @@
                             <span>Tarefas</span>
                         </a>
 
-                        <!-- Reports (Placeholder) -->
-                        <div class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 dark:text-slate-400 cursor-not-allowed opacity-60">
-                            <span class="text-xl">📊</span>
-                            <span>Relatórios</span>
-                            <span class="ml-auto bg-slate-200 dark:bg-slate-700 text-xs px-2 py-1 rounded">Em breve</span>
-                        </div>
-
-                        <!-- Settings (Placeholder) -->
-                        <div class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 dark:text-slate-400 cursor-not-allowed opacity-60">
-                            <span class="text-xl">⚙️</span>
-                            <span>Configurações</span>
-                            <span class="ml-auto bg-slate-200 dark:bg-slate-700 text-xs px-2 py-1 rounded">Em breve</span>
-                        </div>
+                        <!-- Additional nav items removed (Reports & Settings placeholders) -->
                     </div>
                 </nav>
 
@@ -109,8 +97,8 @@
                 </button>
             </div>
 
-            <!-- Mobile Sidebar -->
-            <div id="mobile-sidebar" class="fixed inset-0 bg-black bg-opacity-50 md:hidden z-30 hidden" onclick="toggleMobileMenu()" onKeyDown="if(event.key==='Escape') toggleMobileMenu()" role="presentation"></div>
+            <!-- Mobile Sidebar/backdrop -->
+            <div id="mobile-sidebar" class="fixed inset-0 bg-black bg-opacity-50 md:hidden z-30 hidden" onclick="toggleMobileMenu()" onkeydown="if(event.key==='Escape') toggleMobileMenu()" aria-hidden="true"></div>
             <aside id="mobile-menu" class="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 z-40 transform -translate-x-full transition-transform md:hidden" aria-label="Navegação móvel">
                 <!-- Logo -->
                 <div class="p-6 border-b border-slate-200 dark:border-slate-700">

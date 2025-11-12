@@ -12,7 +12,7 @@
             <div class="flex items-center">
                 <span class="text-2xl font-bold text-blue-600">🎯 ZenFocos</span>
             </div>
-            <div class="flex space-x-4">
+            <div class="flex space-x-4 items-center">
                 <a href="{{ route('login') }}" class="text-gray-700 hover:text-blue-600 font-medium">Login</a>
                 <a href="{{ route('register') }}" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
                     Começar Agora
