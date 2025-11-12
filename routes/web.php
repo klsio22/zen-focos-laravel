@@ -19,6 +19,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Tasks Routes
     Route::resource('tasks', TaskController::class);
+    Route::get('/tasks/{task}/timer', [TaskController::class, 'showTimer'])->name('tasks.timer');
 
     // Pomodoro Routes
     Route::post('/tasks/{task}/start-session', [PomodoroController::class, 'startSession'])->name('pomodoro.start');

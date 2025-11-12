@@ -70,4 +70,10 @@ class TaskController extends Controller
 
         return redirect()->route('tasks.index')->with('success', 'Task removida!');
     }
+
+    public function showTimer(Task $task)
+    {
+        $this->authorize('view', $task);
+        return view('timer.focused', compact('task'));
+    }
 }
