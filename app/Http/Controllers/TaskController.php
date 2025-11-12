@@ -8,10 +8,8 @@ use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
+    // Rota `/home` já está protegida por middleware('auth') via routes/web.php
+    // Removemos o construtor que chamava $this->middleware() para compatibilidade com Laravel 12.
 
     public function index()
     {

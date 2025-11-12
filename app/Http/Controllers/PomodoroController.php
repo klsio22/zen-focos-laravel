@@ -9,10 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class PomodoroController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
+    // Rotas protegidas aplicam o middleware auth; removido construtor para compatibilidade com Laravel 12
 
     public function startSession(Request $request, Task $task)
     {
