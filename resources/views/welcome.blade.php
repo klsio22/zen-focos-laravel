@@ -7,7 +7,8 @@
     <nav class="bg-white shadow-lg">
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center">
-                <span class="text-2xl font-bold text-blue-600">🎯 ZenFocos</span>
+                <x-heroicon-o-rocket-launch class="w-8 h-8 text-blue-600 mr-2" />
+                <span class="text-2xl font-bold text-blue-600">ZenFocos</span>
             </div>
             <div class="flex space-x-4 items-center">
                 <a href="{{ route('login') }}" class="text-gray-700 hover:text-blue-600 font-medium">Login</a>
@@ -22,7 +23,8 @@
     <main class="container mx-auto px-4 py-16">
         <div class="text-center mb-16">
             <h1 class="text-5xl font-bold text-gray-800 mb-4">
-                Produtividade com a Técnica Pomodoro 🍅
+                <x-heroicon-o-clock class="w-8 h-8 inline mr-2 text-red-500" />
+                Produtividade com a Técnica Pomodoro
             </h1>
             <p class="text-xl text-gray-600 mb-8">
                 Organize suas tarefas, mantenha o foco e acompanhe seu progresso
@@ -41,7 +43,9 @@
 
         <div class="grid md:grid-cols-3 gap-8 mb-16">
             <div class="bg-white rounded-lg shadow-lg p-8 text-center">
-                <div class="text-5xl mb-4">📝</div>
+                <div class="text-5xl mb-4">
+                    <x-heroicon-o-clipboard-document-list class="w-12 h-12 text-blue-600 mx-auto" />
+                </div>
                 <h3 class="text-xl font-bold text-gray-800 mb-2">Gerencie Tarefas</h3>
                 <p class="text-gray-600">
                     Crie e organize suas tarefas de forma simples e intuitiva
@@ -49,7 +53,9 @@
             </div>
 
             <div class="bg-white rounded-lg shadow-lg p-8 text-center">
-                <div class="text-5xl mb-4">🍅</div>
+                <div class="text-5xl mb-4">
+                    <x-heroicon-o-clock class="w-12 h-12 text-red-500 mx-auto" />
+                </div>
                 <h3 class="text-xl font-bold text-gray-800 mb-2">Técnica Pomodoro</h3>
                 <p class="text-gray-600">
                     Sessões de 25 minutos de foco intenso para máxima produtividade
@@ -57,7 +63,9 @@
             </div>
 
             <div class="bg-white rounded-lg shadow-lg p-8 text-center">
-                <div class="text-5xl mb-4">📊</div>
+                <div class="text-5xl mb-4">
+                    <x-heroicon-o-chart-bar class="w-12 h-12 text-indigo-600 mx-auto" />
+                </div>
                 <h3 class="text-xl font-bold text-gray-800 mb-2">Acompanhe Progresso</h3>
                 <p class="text-gray-600">
                     Visualize quantos pomodoros você completou em cada tarefa
@@ -112,7 +120,7 @@
         </div>
 
         <div class="text-center mt-12 text-gray-600">
-            <p class="mb-2">💡 Dica: Já tem uma conta de teste?</p>
+            <p class="mb-2"><x-heroicon-o-sparkles class="w-5 h-5 inline mr-2 text-yellow-500" /> Dica: Já tem uma conta de teste?</p>
             <p class="text-sm">
                 Email: <strong>teste@zenfocos.com</strong> | Senha: <strong>senha123</strong>
             </p>
@@ -121,7 +129,7 @@
 
     <footer class="bg-white shadow-lg mt-16 py-8">
         <div class="container mx-auto px-4 text-center text-gray-600">
-            <p>&copy; 2025 ZenFocos - Desenvolvido com ❤️ usando Laravel</p>
+            <p>&copy; 2025 ZenFocos - Desenvolvido com <x-heroicon-o-heart class="w-4 h-4 inline text-red-500" /> usando Laravel</p>
         </div>
     </footer>
 </body>
