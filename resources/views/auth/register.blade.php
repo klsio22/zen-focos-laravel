@@ -23,12 +23,13 @@
                             👤 Nome Completo
                         </label>
                         <input id="name" type="text"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition @error('name') border-red-500 @enderror"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition @error('name') border-red-500 @enderror"
                             name="name" value="{{ old('name') }}" placeholder="Seu nome" required autocomplete="name"
                             autofocus>
                         @error('name')
                             <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
                         @enderror
+                        </input>
                     </div>
 
                     <!-- Email -->
@@ -37,12 +38,13 @@
                             📧 Email
                         </label>
                         <input id="email" type="email"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition @error('email') border-red-500 @enderror"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition @error('email') border-red-500 @enderror"
                             name="email" value="{{ old('email') }}" placeholder="seu@email.com" required
                             autocomplete="email">
                         @error('email')
                             <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
                         @enderror
+                        </input>
                     </div>
 
                     <!-- Senha -->
@@ -51,12 +53,13 @@
                             🔒 Senha
                         </label>
                         <input id="password" type="password"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-zinc-950 focus:outline-none focus:border-blue-500 transition @error('password') border-red-500 @enderror"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition @error('password') border-red-500 @enderror"
                             name="password" placeholder="••••••••" required autocomplete="new-password">
                         <p class="text-gray-500 text-xs mt-1">Mínimo 8 caracteres</p>
                         @error('password')
                             <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
                         @enderror
+                        </input>
                     </div>
 
                     <!-- Confirmar Senha -->
@@ -65,7 +68,7 @@
                             ✅ Confirmar Senha
                         </label>
                         <input id="password-confirm" type="password"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-zinc-950 focus:outline-none focus:border-blue-500 transition"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition"
                             name="password_confirmation" placeholder="••••••••" required autocomplete="new-password">
                     </div>
 

@@ -24,12 +24,12 @@
                 <label for="title" class="block text-gray-700 font-medium mb-2">
                     Título da Task <span class="text-red-500">*</span>
                 </label>
-                <input type="text"
-                       id="title"
-                       name="title"
-                       value="{{ old('title', $task->title) }}"
-                       class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                       required>
+          <input type="text"
+              id="title"
+              name="title"
+              value="{{ old('title', $task->title) }}"
+              class="w-full px-4 py-2 border rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required>
                 @error('title')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
@@ -69,13 +69,13 @@
                 <label for="estimated_pomodoros" class="block text-gray-700 font-medium mb-2">
                     Pomodoros Estimados 🍅 <span class="text-red-500">*</span>
                 </label>
-                <input type="number"
-                       id="estimated_pomodoros"
-                       name="estimated_pomodoros"
-                       value="{{ old('estimated_pomodoros', $task->estimated_pomodoros) }}"
-                       min="1"
-                       class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                       required>
+          <input type="number"
+              id="estimated_pomodoros"
+              name="estimated_pomodoros"
+              value="{{ old('estimated_pomodoros', $task->estimated_pomodoros) }}"
+              min="1"
+              class="w-full px-4 py-2 border rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required>
                 <p class="text-gray-500 text-sm mt-1">Completados: {{ $task->completed_pomodoros }} 🍅</p>
                 @error('estimated_pomodoros')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
