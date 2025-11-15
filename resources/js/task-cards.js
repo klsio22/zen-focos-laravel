@@ -7,6 +7,10 @@ if (!globalThis.__taskCardTimerInit) {
   globalThis.__taskCardTimerInit = true;
   globalThis.__taskCardTimers = new Map(); // taskId -> intervalId
 
+  // Helper to iterate NodeList in environments where NodeList.forEach may not exist
+  const nodeListForEach = (nodes, cb) =>
+    Array.prototype.forEach.call(nodes, cb);
+
   async function fetchActiveSession() {
     try {
       const res = await fetch("/active-session", {
@@ -60,6 +64,37 @@ if (!globalThis.__taskCardTimerInit) {
   (function initPolling() {
     let activeSessionCached = null;
 
+    // Ensure pending cards show a preview immediately (defensive for timing/CSS issues)
+    function ensurePreviewVisibleForPending() {
+      const cards = document.querySelectorAll(".task-card");
+      nodeListForEach(cards, (card) => {
+        const tid = Number(card.dataset.taskId || 0);
+        const cardEstimated = Number.parseInt(
+          card.dataset.estimated || "0",
+          10
+        );
+        const cardCompleted = Number.parseInt(
+          card.dataset.completed || "0",
+          10
+        );
+        const cardIsComplete =
+          cardEstimated > 0 && cardCompleted >= cardEstimated;
+        if (cardIsComplete) return;
+
+        const timerEl = card.querySelector(".task-small-timer");
+        if (!timerEl) return;
+
+        // If it's hidden by class, remove it. Also set explicit display flex as fallback.
+        timerEl.classList.remove("hidden");
+        timerEl.style.display = timerEl.style.display || "flex";
+
+        const timeEl = timerEl.querySelector("[data-time]");
+        if (timeEl && (timeEl.textContent || "").trim() === "--:--") {
+          timeEl.textContent = "25:00";
+        }
+      });
+    }
+
     async function sync() {
       const data = await fetchActiveSession();
       const active = data.active;
@@ -68,15 +103,36 @@ if (!globalThis.__taskCardTimerInit) {
       // find all cards
       const cards = document.querySelectorAll(".task-card");
 
-      // If no active nor paused sessions, clear timers and hide previews
+      // If no active nor paused sessions, show a static preview on every non-complete card
       if (!active && (!pausedList || pausedList.length === 0)) {
-        cards.forEach((card) => {
+        nodeListForEach(cards, (card) => {
           const tid = Number(card.dataset.taskId || 0);
+
+          // clear any running interval
           if (globalThis.__taskCardTimers.has(tid)) {
             clearInterval(globalThis.__taskCardTimers.get(tid));
             globalThis.__taskCardTimers.delete(tid);
           }
-          hideCardTimer(card);
+
+          // don't show preview for already completed cards
+          const cardEstimated = Number.parseInt(
+            card.dataset.estimated || "0",
+            10
+          );
+          const cardCompleted = Number.parseInt(
+            card.dataset.completed || "0",
+            10
+          );
+          const cardIsComplete =
+            cardEstimated > 0 && cardCompleted >= cardEstimated;
+          if (cardIsComplete) {
+            hideCardTimer(card);
+            return;
+          }
+
+          // show preview: default single pomodoro length (25 minutes)
+          showCardTimer(card);
+          updateCardTimerDisplay(card, 25 * 60, 25);
         });
         activeSessionCached = null;
         return;
@@ -92,91 +148,120 @@ if (!globalThis.__taskCardTimerInit) {
         startTime = new Date(active.start_time).getTime();
       }
 
-      cards.forEach((card) => {
+      nodeListForEach(cards, (card) =>
+        processCardDuringSync(
+          card,
+          active,
+          pausedList,
+          sessionTaskId,
+          duration,
+          startTime
+        )
+      );
+
+      function processCardDuringSync(
+        card,
+        active,
+        pausedList,
+        sessionTaskId,
+        duration,
+        startTime
+      ) {
         const tid = Number(card.dataset.taskId || 0);
 
         // If there is a paused session for this card, show paused preview without ticking
         const pausedForCard = pausedList.find((s) => Number(s.task_id) === tid);
         if (pausedForCard) {
-          // show paused small timer using remaining_seconds if available
-          showCardTimer(card);
-          const remaining =
-            typeof pausedForCard.remaining_seconds === "number"
-              ? pausedForCard.remaining_seconds
-              : (pausedForCard.duration || 25) * 60;
-          updateCardTimerDisplay(card, remaining, pausedForCard.duration || 25);
-          // clear any running interval
-          if (globalThis.__taskCardTimers.has(tid)) {
-            clearInterval(globalThis.__taskCardTimers.get(tid));
-            globalThis.__taskCardTimers.delete(tid);
-          }
+          handlePausedCard(card, tid, pausedForCard);
           return;
         }
 
         if (active && tid === sessionTaskId) {
-          // don't show timer for tasks that are already complete according to the card data
-          const cardEstimated = Number.parseInt(
-            card.dataset.estimated || "0",
-            10
-          );
-          const cardCompleted = Number.parseInt(
-            card.dataset.completed || "0",
-            10
-          );
-          const cardIsComplete =
-            cardEstimated > 0 && cardCompleted >= cardEstimated;
-          if (cardIsComplete) {
-            if (globalThis.__taskCardTimers.has(tid)) {
-              clearInterval(globalThis.__taskCardTimers.get(tid));
-              globalThis.__taskCardTimers.delete(tid);
-            }
-            hideCardTimer(card);
-            return;
-          }
-
-          // Show timer
-          showCardTimer(card);
-
-          // compute remaining seconds
-          const elapsed = Math.floor((Date.now() - startTime) / 1000);
-          let secondsRemaining = Math.max(duration * 60 - elapsed, 0);
-
-          // If there's already an interval for this card, clear it first
-          if (globalThis.__taskCardTimers.has(tid)) {
-            clearInterval(globalThis.__taskCardTimers.get(tid));
-            globalThis.__taskCardTimers.delete(tid);
-          }
-
-          // update immediately
-          updateCardTimerDisplay(card, secondsRemaining, duration);
-
-          // start ticking every second
-          const intervalId = setInterval(() => {
-            secondsRemaining = Math.max(secondsRemaining - 1, 0);
-            updateCardTimerDisplay(card, secondsRemaining, duration);
-            if (secondsRemaining <= 0) {
-              clearInterval(intervalId);
-              globalThis.__taskCardTimers.delete(tid);
-              // hide when ended
-              hideCardTimer(card);
-            }
-          }, 1000);
-
-          globalThis.__taskCardTimers.set(tid, intervalId);
+          handleActiveCard(card, tid, duration, startTime);
         } else {
-          // Not the active task: ensure hidden and clear any interval
+          handleInactiveCard(card, tid);
+        }
+      }
+
+      function handlePausedCard(card, tid, pausedForCard) {
+        showCardTimer(card);
+        const remaining =
+          typeof pausedForCard.remaining_seconds === "number"
+            ? pausedForCard.remaining_seconds
+            : (pausedForCard.duration || 25) * 60;
+        updateCardTimerDisplay(card, remaining, pausedForCard.duration || 25);
+        // clear any running interval
+        if (globalThis.__taskCardTimers.has(tid)) {
+          clearInterval(globalThis.__taskCardTimers.get(tid));
+          globalThis.__taskCardTimers.delete(tid);
+        }
+      }
+
+      function handleActiveCard(card, tid, duration, startTime) {
+        // don't show timer for tasks that are already complete according to the card data
+        const cardEstimated = Number.parseInt(
+          card.dataset.estimated || "0",
+          10
+        );
+        const cardCompleted = Number.parseInt(
+          card.dataset.completed || "0",
+          10
+        );
+        const cardIsComplete =
+          cardEstimated > 0 && cardCompleted >= cardEstimated;
+        if (cardIsComplete) {
           if (globalThis.__taskCardTimers.has(tid)) {
             clearInterval(globalThis.__taskCardTimers.get(tid));
             globalThis.__taskCardTimers.delete(tid);
           }
           hideCardTimer(card);
+          return;
         }
-      });
 
-      activeSessionCached = active;
+        // Show timer
+        showCardTimer(card);
+
+        // compute remaining seconds
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        let secondsRemaining = Math.max(duration * 60 - elapsed, 0);
+
+        // If there's already an interval for this card, clear it first
+        if (globalThis.__taskCardTimers.has(tid)) {
+          clearInterval(globalThis.__taskCardTimers.get(tid));
+          globalThis.__taskCardTimers.delete(tid);
+        }
+
+        // update immediately
+        updateCardTimerDisplay(card, secondsRemaining, duration);
+
+        // start ticking every second
+        const intervalId = setInterval(() => {
+          secondsRemaining = Math.max(secondsRemaining - 1, 0);
+          updateCardTimerDisplay(card, secondsRemaining, duration);
+          if (secondsRemaining <= 0) {
+            clearInterval(intervalId);
+            globalThis.__taskCardTimers.delete(tid);
+            // hide when ended
+            hideCardTimer(card);
+          }
+        }, 1000);
+
+        globalThis.__taskCardTimers.set(tid, intervalId);
+      }
+
+      function handleInactiveCard(card, tid) {
+        // Not the active task: ensure hidden and clear any interval
+        if (globalThis.__taskCardTimers.has(tid)) {
+          clearInterval(globalThis.__taskCardTimers.get(tid));
+          globalThis.__taskCardTimers.delete(tid);
+        }
+        hideCardTimer(card);
+      }
     }
 
     // initial sync and then poll every 5 seconds
+    // Make preview visible ASAP then sync server state
+    ensurePreviewVisibleForPending();
     sync();
     setInterval(sync, 5000);
   })();
