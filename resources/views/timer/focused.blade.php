@@ -3,14 +3,14 @@
 @section('title', 'Temporizador - ' . $task->title)
 
 @section('content')
-<div class="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center px-4 py-8">
+<div class="min-h-screen bg-slate-200 flex items-center justify-center px-4 py-8">
     <div class="w-full max-w-2xl">
         <!-- Working on: Label -->
         <div class="text-center mb-12">
-            <p class="text-slate-600 dark:text-slate-400 text-lg mb-2">
+            <p class="text-slate-600 text-lg mb-2">
                 ✨ Trabalhando em:
             </p>
-            <h1 class="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-900 mb-8">
                 {{ $task->title }}
             </h1>
 
@@ -27,7 +27,7 @@
                             fill="none"
                             stroke="currentColor"
                             stroke-width="2"
-                            class="text-slate-200 dark:text-slate-700"
+                            class="text-slate-300"
                         />
                         <!-- Progress circle -->
                         <circle
@@ -43,7 +43,7 @@
                             stroke-linecap="round"
                             stroke-linejoin="round"
                             transform="rotate(-90 100 100)"
-                            class="timer-circle text-blue-500 dark:text-blue-400 transition-all duration-1000"
+                            class="timer-circle text-blue-600 transition-all duration-1000"
                             style="stroke-dashoffset: 0;"
                         />
                     </svg>
@@ -51,7 +51,7 @@
                     <!-- Timer Text (centered in circle) -->
                     <div class="absolute inset-0 flex items-center justify-center">
                         <div class="text-center">
-                            <div id="timer-display" class="text-6xl md:text-7xl font-bold text-slate-900 dark:text-white font-mono">
+                            <div id="timer-display" class="text-6xl md:text-7xl font-bold text-slate-900 font-mono">
                                 25:00
                             </div>
                         </div>
@@ -61,13 +61,13 @@
 
             <!-- Session Counter -->
             <div class="mb-8">
-                <p class="text-slate-600 dark:text-slate-400 text-base mb-3">
+                <p class="text-slate-600 text-base mb-3">
                     Sessão {{ $task->completed_pomodoros + 1 }} de {{ $task->estimated_pomodoros }}
                 </p>
                 <!-- Dots indicator -->
                 <div class="flex justify-center gap-2">
                     @for($i = 1; $i <= $task->estimated_pomodoros; $i++)
-                        <div class="w-3 h-3 rounded-full {{ $i <= $task->completed_pomodoros ? 'bg-green-500 dark:bg-green-400' : ($i == $task->completed_pomodoros + 1 ? 'bg-blue-500 dark:bg-blue-400' : 'bg-slate-300 dark:bg-slate-600') }}"></div>
+                        <div class="w-3 h-3 rounded-full {{ $i <= $task->completed_pomodoros ? 'bg-green-600' : ($i == $task->completed_pomodoros + 1 ? 'bg-blue-600' : 'bg-slate-300') }}"></div>
                     @endfor
                 </div>
             </div>
@@ -77,7 +77,7 @@
                 <button
                     id="pause-btn"
                     onclick="toggleTimer({{ $task->id }})"
-                    class="bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white px-8 py-3 rounded-full font-semibold transition-colors shadow-lg flex items-center gap-2"
+                    class="bg-slate-700 hover:bg-slate-800 text-white px-8 py-3 rounded-full font-semibold transition-colors shadow-lg flex items-center gap-2"
                 >
                     <span id="btn-icon">▶️</span>
                     <span id="btn-text">Iniciar</span>
@@ -85,7 +85,7 @@
 
                 <button
                     onclick="skipPomodoro({{ $task->id }})"
-                    class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-8 py-3 rounded-full font-semibold transition-colors shadow-lg flex items-center gap-2"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-semibold transition-colors shadow-lg flex items-center gap-2"
                 >
                     <span>⏭</span>
                     <span>Pular</span>
@@ -94,7 +94,7 @@
 
             <!-- Back Button -->
             <a href="{{ route('tasks.index') }}"
-               class="inline-flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors font-medium"
+               class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors font-medium"
             >
                 <span>←</span>
                 <span>Voltar para Tarefas</span>
@@ -136,12 +136,12 @@
         const circle = document.getElementById('timer-progress');
         if (seconds > 300) { // > 5 minutos
             circle.classList.remove('text-orange-500', 'text-red-600');
-            circle.classList.add('text-blue-500', 'dark:text-blue-400');
+            circle.classList.add('text-blue-600');
         } else if (seconds > 60) { // 1-5 minutos
-            circle.classList.remove('text-blue-500', 'dark:text-blue-400', 'text-red-600');
+            circle.classList.remove('text-blue-600', 'text-red-600');
             circle.classList.add('text-orange-500');
         } else { // < 1 minuto
-            circle.classList.remove('text-blue-500', 'dark:text-blue-400', 'text-orange-500');
+            circle.classList.remove('text-blue-600', 'text-orange-500');
             circle.classList.add('text-red-600');
         }
     }

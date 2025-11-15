@@ -20,14 +20,14 @@
             @csrf
 
             <div class="mb-6">
-                <label for="title" class="block text-gray-700 font-medium mb-2">
+                <label for="title" class="block text-slate-900 font-medium mb-2">
                     Título da Task <span class="text-red-500">*</span>
                 </label>
                 <input type="text"
                        id="title"
                        name="title"
                        value="{{ old('title') }}"
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('title') border-red-500 @enderror"
+                       class="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('title') border-red-500 @enderror"
                        placeholder="Ex: Estudar Laravel"
                        required>
                 @error('title')
@@ -36,13 +36,13 @@
             </div>
 
             <div class="mb-6">
-                <label for="description" class="block text-gray-700 font-medium mb-2">
+                <label for="description" class="block text-slate-900 font-medium mb-2">
                     Descrição
                 </label>
                 <textarea id="description"
                           name="description"
                           rows="4"
-                          class="w-full px-4 py-2 border border-gray-300 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('description') border-red-500 @enderror"
+                          class="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('description') border-red-500 @enderror"
                           placeholder="Descreva os detalhes da task...">{{ old('description') }}</textarea>
                 @error('description')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -50,7 +50,7 @@
             </div>
 
             <div class="mb-6">
-                <label for="estimated_pomodoros" class="block text-gray-700 font-medium mb-2">
+                <label for="estimated_pomodoros" class="block text-slate-900 font-medium mb-2">
                     Pomodoros Estimados 🍅 <span class="text-red-500">*</span>
                 </label>
                 <input type="number"
@@ -58,9 +58,9 @@
                        name="estimated_pomodoros"
                        value="{{ old('estimated_pomodoros', 1) }}"
                        min="1"
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('estimated_pomodoros') border-red-500 @enderror"
+                       class="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('estimated_pomodoros') border-red-500 @enderror"
                        required>
-                <p class="text-gray-500 text-sm mt-1">Cada pomodoro = 25 minutos de foco</p>
+                <p class="text-slate-600 text-sm mt-1">Cada pomodoro = 25 minutos de foco</p>
                 @error('estimated_pomodoros')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror

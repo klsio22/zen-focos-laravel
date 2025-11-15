@@ -7,14 +7,14 @@
     <!-- Header -->
     <div class="mb-8">
         <div class="flex justify-between items-center">
-            <h1 class="text-4xl font-bold text-slate-900 dark:text-white">
+            <h1 class="text-4xl font-bold text-slate-900">
                 📋 Minhas Tarefas
             </h1>
-            <a href="{{ route('tasks.create') }}" class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg">
+            <a href="{{ route('tasks.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg">
                 ➕ Nova Tarefa
             </a>
         </div>
-        <p class="text-slate-600 dark:text-slate-400 mt-2">Organize suas tarefas e mantenha-se focado com Pomodoro</p>
+        <p class="text-slate-600 mt-2">Organize suas tarefas e mantenha-se focado com Pomodoro</p>
     </div>
 
     @if($tasks->count() > 0)
@@ -28,9 +28,9 @@
         <!-- Pending Tasks -->
         @if($pending->count() > 0)
             <div class="mb-12">
-                <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4 flex items-center">
                     ⏳ Pendentes
-                    <span class="ml-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1 rounded-full text-sm font-semibold">
+                    <span class="ml-2 bg-slate-300 text-slate-800 px-3 py-1 rounded-full text-sm font-semibold">
                         {{ $pending->count() }}
                     </span>
                 </h2>
@@ -45,9 +45,9 @@
         <!-- In Progress Tasks -->
         @if($inProgress->count() > 0)
             <div class="mb-12">
-                <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4 flex items-center">
                     🔄 Em Progresso
-                    <span class="ml-2 bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-100 px-3 py-1 rounded-full text-sm font-semibold">
+                    <span class="ml-2 bg-amber-200 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold">
                         {{ $inProgress->count() }}
                     </span>
                 </h2>
@@ -62,9 +62,9 @@
         <!-- Completed Tasks -->
         @if($completed->count() > 0)
             <div class="mb-12">
-                <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4 flex items-center">
                     ✅ Concluídas
-                    <span class="ml-2 bg-green-200 dark:bg-green-900 text-green-800 dark:text-green-100 px-3 py-1 rounded-full text-sm font-semibold">
+                    <span class="ml-2 bg-green-200 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
                         {{ $completed->count() }}
                     </span>
                 </h2>
@@ -77,10 +77,10 @@
         @endif
     @else
         <!-- Empty State -->
-        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md p-12 text-center">
+        <div class="bg-white rounded-lg shadow-md p-12 text-center">
             <div class="text-6xl mb-4">📝</div>
-            <h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-2">Nenhuma tarefa encontrada</h2>
-            <p class="text-slate-600 dark:text-slate-400 mb-6">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Nenhuma tarefa encontrada</h2>
+            <p class="text-slate-600 mb-6">
                 Comece criando sua primeira tarefa e use a técnica Pomodoro para aumentar sua produtividade!
             </p>
             <a href="{{ route('tasks.create') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition shadow-lg">

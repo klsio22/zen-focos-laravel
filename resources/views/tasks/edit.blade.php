@@ -21,14 +21,14 @@
             @method('PUT')
 
             <div class="mb-6">
-                <label for="title" class="block text-gray-700 font-medium mb-2">
+                <label for="title" class="block text-slate-900 font-medium mb-2">
                     Título da Task <span class="text-red-500">*</span>
                 </label>
           <input type="text"
               id="title"
               name="title"
               value="{{ old('title', $task->title) }}"
-              class="w-full px-4 py-2 border rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required>
                 @error('title')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -36,25 +36,25 @@
             </div>
 
             <div class="mb-6">
-                <label for="description" class="block text-gray-700 font-medium mb-2">
+                <label for="description" class="block text-slate-900 font-medium mb-2">
                     Descrição
                 </label>
                 <textarea id="description"
                           name="description"
                           rows="4"
-                          class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ old('description', $task->description) }}</textarea>
+                          class="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ old('description', $task->description) }}</textarea>
                 @error('description')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
             <div class="mb-6">
-                <label for="status" class="block text-gray-700 font-medium mb-2">
+                <label for="status" class="block text-slate-900 font-medium mb-2">
                     Status <span class="text-red-500">*</span>
                 </label>
                 <select id="status"
                         name="status"
-                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        class="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         required>
                     <option value="pending" {{ old('status', $task->status) === 'pending' ? 'selected' : '' }}>Pendente</option>
                     <option value="in_progress" {{ old('status', $task->status) === 'in_progress' ? 'selected' : '' }}>Em Progresso</option>
@@ -66,7 +66,7 @@
             </div>
 
             <div class="mb-6">
-                <label for="estimated_pomodoros" class="block text-gray-700 font-medium mb-2">
+                <label for="estimated_pomodoros" class="block text-slate-900 font-medium mb-2">
                     Pomodoros Estimados 🍅 <span class="text-red-500">*</span>
                 </label>
           <input type="number"
@@ -74,9 +74,9 @@
               name="estimated_pomodoros"
               value="{{ old('estimated_pomodoros', $task->estimated_pomodoros) }}"
               min="1"
-              class="w-full px-4 py-2 border rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-4 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required>
-                <p class="text-gray-500 text-sm mt-1">Completados: {{ $task->completed_pomodoros }} 🍅</p>
+                <p class="text-slate-600 text-sm mt-1">Completados: {{ $task->completed_pomodoros }} 🍅</p>
                 @error('estimated_pomodoros')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
