@@ -93,24 +93,37 @@
 <script>
     function updateTaskStatus(taskId, isChecked) {
         const status = isChecked ? 'completed' : 'pending';
+        const cardElement = event.target.closest('.bg-white');
+        const titleElement = cardElement.querySelector('h3');
+        const title = titleElement ? titleElement.textContent.trim() : '';
 
         fetch(`/tasks/${taskId}`, {
             method: 'PUT',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                 'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
-            body: JSON.stringify({ status: status })
+            body: JSON.stringify({
+                status: status,
+                title: title,
+                description: '',
+                estimated_pomodoros: 1
+            })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             console.log('Status atualizado:', data);
-            // Recarregar a página para refletir as mudanças
             setTimeout(() => location.reload(), 300);
         })
         .catch(error => {
-            console.error('Erro:', error);
-            alert('❌ Erro ao atualizar status');
+            console.error('Erro completo:', error);
+            alert('❌ Erro ao atualizar status: ' + error.message);
         });
     }
 </script>

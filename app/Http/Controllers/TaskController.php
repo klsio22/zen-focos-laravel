@@ -60,6 +60,14 @@ class TaskController extends Controller
 
         $task->update($validated);
 
+        // Se for uma requisição AJAX/JSON, retornar JSON
+        if ($request->wantsJson()) {
+            return response()->json([
+                'message' => 'Task atualizada com sucesso!',
+                'task' => $task
+            ]);
+        }
+
         return redirect()->route('tasks.index')->with('success', 'Task atualizada!');
     }
 
