@@ -240,8 +240,8 @@
       updateTimerDisplay(secondsRemaining);
 
       // Atualizar store também durante ticking local
-      if (window.timerStore) {
-        window.timerStore.tick();
+      if (globalThis.timerStore) {
+        globalThis.timerStore.tick();
       }
 
       if (secondsRemaining <= 0) {
@@ -339,13 +339,62 @@
     const cancelBtn = document.getElementById("skip-cancel-btn");
 
     if (confirmBtn) {
-      confirmBtn.addEventListener("click", () => {
-        // perform skip action: clear timer and reload
-        clearInterval(timerInterval);
-        isRunning = false;
-        hideSkipModal();
-        // keep original behavior: reload to reflect changes
-        location.reload();
+      confirmBtn.addEventListener("click", async () => {
+        // perform skip action: attempt to complete the current active or paused session via API
+        try {
+          // disable UI while processing
+          confirmBtn.disabled = true;
+
+          // get active / paused sessions to find the session id
+          const res = await fetch("/active-session", {
+            headers: {
+              "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+              Accept: "application/json",
+            },
+          });
+
+          if (!res.ok) throw new Error('Falha ao recuperar sessão ativa');
+          const data = await res.json();
+          const current = data.active || null;
+
+          // prefer active session, else try to find a paused session for this task
+          let sessionToComplete = null;
+          if (current && Number(current.task_id) === Number(taskId)) {
+            sessionToComplete = current;
+          } else if (Array.isArray(data.paused) && data.paused.length) {
+            const pausedForThis = data.paused.find((p) => Number(p.task_id) === Number(taskId));
+            if (pausedForThis) sessionToComplete = pausedForThis;
+          }
+
+          if (sessionToComplete?.id) {
+            // Call complete endpoint
+            const completeRes = await fetch(`/sessions/${sessionToComplete.id}/complete`, {
+              method: "POST",
+              headers: {
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+            });
+
+            if (!completeRes.ok) throw new Error('Falha ao pular sessão');
+          } else {
+            // nothing to complete: just log and continue
+            console.warn('Nenhuma sessão ativa/pausada encontrada para pular');
+          }
+
+          // cleanup local timer and reload to reflect server state
+          clearInterval(timerInterval);
+          isRunning = false;
+          hideSkipModal();
+          location.reload();
+        } catch (err) {
+          console.error('Erro ao pular pomodoro:', err);
+          alert('Erro ao pular pomodoro: ' + (err.message || err));
+          hideSkipModal();
+        } finally {
+          confirmBtn.disabled = false;
+        }
       });
     }
 
@@ -357,8 +406,8 @@
 
     // ========== STORE LISTENER ==========
     // Sincronizar página do timer com mudanças na store global (vindas de cards ou SSE)
-    if (window.timerStore) {
-      window.timerStore.subscribe((storeState) => {
+    if (globalThis.timerStore) {
+      globalThis.timerStore.subscribe((storeState) => {
         // Se a tarefa desta página está na store e está ativa
         if (storeState.taskId === taskId) {
           // Sincronizar segundos restantes
