@@ -23,7 +23,8 @@
                 <div class="p-6 border-b border-slate-300">
                     <a href="{{ route('home') }}"
                         class="text-2xl font-bold text-blue-600 flex items-center gap-2 hover:text-blue-700 transition">
-                        🎯 <span>ZenFocos</span>
+                        <x-heroicon-o-rocket-launch class="w-8 h-8" />
+                        <span>ZenFocos</span>
                     </a>
                 </div>
 
@@ -33,14 +34,14 @@
                         <!-- Home -->
                         <a href="{{ route('home') }}"
                             class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('home', 'tasks.index') ? 'bg-blue-600 text-white font-semibold' : 'text-slate-700 hover:bg-slate-200' }} transition">
-                            <span class="text-xl">🏠</span>
+                            <x-heroicon-o-home class="w-5 h-5" />
                             <span>Home</span>
                         </a>
 
                         <!-- Tasks -->
                         <a href="{{ route('tasks.index') }}"
                             class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('tasks.*') && !request()->routeIs('tasks.timer') ? 'bg-blue-600 text-white font-semibold' : 'text-slate-700 hover:bg-slate-200' }} transition">
-                            <span class="text-xl">📋</span>
+                            <x-heroicon-o-clipboard-document-list class="w-5 h-5" />
                             <span>Tarefas</span>
                         </a>
 
@@ -60,8 +61,9 @@
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
                         <button type="submit"
-                            class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition">
-                            🚪 Sair
+                            class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition flex items-center justify-center gap-2">
+                            <x-heroicon-o-arrow-left-on-rectangle class="w-5 h-5" />
+                            <span>Sair</span>
                         </button>
                     </form>
                 </div>
@@ -72,13 +74,12 @@
                 class="md:hidden fixed top-0 left-0 right-0 h-16 bg-slate-100 border-b border-slate-300 z-40 flex items-center justify-between px-4 shadow-md">
                 <a href="{{ route('home') }}"
                     class="text-2xl font-bold text-blue-600 flex items-center gap-2">
-                    🎯 <span>ZenFocos</span>
+                    <x-heroicon-o-rocket-launch class="w-6 h-6" />
+                    <span>ZenFocos</span>
                 </a>
                 <button onclick="toggleMobileMenu()"
                     class="p-2 hover:bg-slate-200 rounded-lg transition">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
+                    <x-heroicon-o-bars-3 class="w-6 h-6" />
                 </button>
             </div>
 
@@ -93,7 +94,8 @@
                 <div class="p-6 border-b border-slate-300">
                     <a href="{{ route('home') }}"
                         class="text-2xl font-bold text-blue-600 flex items-center gap-2">
-                        🎯 <span>ZenFocos</span>
+                        <x-heroicon-o-rocket-launch class="w-8 h-8" />
+                        <span>ZenFocos</span>
                     </a>
                 </div>
 
@@ -101,12 +103,12 @@
                 <nav class="px-4 py-6 space-y-2" aria-label="Menu móvel">
                     <a href="{{ route('home') }}" onclick="toggleMobileMenu()"
                         class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-200 transition">
-                        <span class="text-xl">🏠</span>
+                        <x-heroicon-o-home class="w-5 h-5" />
                         <span>Home</span>
                     </a>
                     <a href="{{ route('tasks.index') }}" onclick="toggleMobileMenu()"
                         class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-200 transition">
-                        <span class="text-xl">📋</span>
+                        <x-heroicon-o-clipboard-document-list class="w-5 h-5" />
                         <span>Tarefas</span>
                     </a>
                 </nav>
@@ -116,8 +118,9 @@
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
                         <button type="submit"
-                            class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition">
-                            🚪 Sair
+                            class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition flex items-center justify-center gap-2">
+                            <x-heroicon-o-arrow-left-on-rectangle class="w-5 h-5" />
+                            <span>Sair</span>
                         </button>
                     </form>
                 </div>

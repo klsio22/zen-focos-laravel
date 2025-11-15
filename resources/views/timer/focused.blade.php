@@ -7,8 +7,9 @@
     <div class="w-full max-w-2xl">
         <!-- Working on: Label -->
         <div class="text-center mb-12">
-            <p class="text-slate-600 text-lg mb-2">
-                ✨ Trabalhando em:
+            <p class="text-slate-600 text-lg mb-2 flex items-center justify-center gap-2">
+                <x-heroicon-o-sparkles class="w-5 h-5" />
+                <span>Trabalhando em:</span>
             </p>
             <h1 class="text-4xl md:text-5xl font-bold text-slate-900 mb-8">
                 {{ $task->title }}
@@ -77,17 +78,18 @@
                 <button
                     id="pause-btn"
                     onclick="toggleTimer({{ $task->id }})"
-                    class="bg-slate-700 hover:bg-slate-800 text-white px-8 py-3 rounded-full font-semibold transition-colors shadow-lg flex items-center gap-2"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-semibold transition-colors shadow-lg flex items-center gap-2"
                 >
-                    <span id="btn-icon">▶️</span>
+                    <x-heroicon-o-play id="btn-icon-play" class="w-5 h-5" />
+                    <x-heroicon-o-pause id="btn-icon-pause" class="w-5 h-5 hidden" />
                     <span id="btn-text">Iniciar</span>
                 </button>
 
                 <button
                     onclick="skipPomodoro({{ $task->id }})"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-semibold transition-colors shadow-lg flex items-center gap-2"
+                    class="bg-amber-600 hover:bg-amber-700 text-white px-8 py-3 rounded-full font-semibold transition-colors shadow-lg flex items-center gap-2"
                 >
-                    <span>⏭</span>
+                    <x-heroicon-o-forward class="w-5 h-5" />
                     <span>Pular</span>
                 </button>
             </div>
@@ -96,7 +98,7 @@
             <a href="{{ route('tasks.index') }}"
                class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors font-medium"
             >
-                <span>←</span>
+                <x-heroicon-o-arrow-left class="w-5 h-5" />
                 <span>Voltar para Tarefas</span>
             </a>
         </div>
@@ -182,14 +184,16 @@
     }
 
     async function toggleTimer(taskId) {
-        const btnIcon = document.getElementById('btn-icon');
         const btnText = document.getElementById('btn-text');
+        const btnPlayIcon = document.getElementById('btn-icon-play');
+        const btnPauseIcon = document.getElementById('btn-icon-pause');
 
         if (isRunning) {
             // Pausar (client-side pause; server still marks session as active)
             clearInterval(timerInterval);
             isRunning = false;
-            if (btnIcon) btnIcon.textContent = '▶️';
+            if (btnPlayIcon) btnPlayIcon.classList.remove('hidden');
+            if (btnPauseIcon) btnPauseIcon.classList.add('hidden');
             if (btnText) btnText.textContent = 'Retomar';
             return;
         }
@@ -223,15 +227,18 @@
             startTimer();
         } catch (error) {
             console.error('Erro:', error);
-            alert('❌ Erro ao iniciar sessão');
+            alert('Erro ao iniciar sessão');
         }
     }
 
     function startTimer() {
         isRunning = true;
-        const btnIcon = document.getElementById('btn-icon');
+        const btnPlayIcon = document.getElementById('btn-icon-play');
+        const btnPauseIcon = document.getElementById('btn-icon-pause');
         const btnText = document.getElementById('btn-text');
-        if (btnIcon) btnIcon.textContent = '⏸️';
+
+        if (btnPlayIcon) btnPlayIcon.classList.add('hidden');
+        if (btnPauseIcon) btnPauseIcon.classList.remove('hidden');
         if (btnText) btnText.textContent = 'Pausar';
 
         timerInterval = setInterval(() => {
@@ -267,7 +274,7 @@
                 .then(response => response.json())
                 .then(result => {
                     // Mostrar notificação e redirecionar
-                    alert('✅ Pomodoro concluído! Parabéns!');
+                    alert('Pomodoro concluído! Parabéns!');
                     // reset local state and reload to reflect updated task counts
                     activeSession = null;
                     secondsRemaining = 25 * 60;
@@ -281,7 +288,7 @@
     }
 
     function skipPomodoro(taskId) {
-        if (confirm('⚠️ Tem certeza que deseja pular este pomodoro?')) {
+        if (confirm('Tem certeza que deseja pular este pomodoro?')) {
             clearInterval(timerInterval);
             isRunning = false;
             location.reload();
