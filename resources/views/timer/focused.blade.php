@@ -105,6 +105,22 @@
     </div>
 </div>
 
+<!-- Skip Confirmation Modal -->
+<div id="skip-modal" class="fixed inset-0 z-50 hidden bg-black/50">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-slate-900 mb-2">Pular Pomodoro</h3>
+                <p class="text-slate-600 mb-4">Tem certeza que deseja pular este pomodoro?</p>
+                <div class="flex justify-end gap-3">
+                    <button id="skip-cancel-btn" class="px-4 py-2 rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200">Cancelar</button>
+                    <button id="skip-confirm-btn" class="px-4 py-2 rounded-md bg-rose-600 text-white hover:bg-rose-700">Sim, pular</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section('scripts')
 <script>
     const taskId = {{ $task->id }};
@@ -115,6 +131,7 @@
     let isRunning = false;
     let secondsRemaining = 25 * 60;
     let activeSession = null; // will hold session data from backend if any
+    let pendingSkipTaskId = null; // store task id when showing skip confirmation
 
     function formatTime(seconds) {
         const mins = Math.floor(seconds / 60);
@@ -288,11 +305,20 @@
     }
 
     function skipPomodoro(taskId) {
-        if (confirm('Tem certeza que deseja pular este pomodoro?')) {
-            clearInterval(timerInterval);
-            isRunning = false;
-            location.reload();
-        }
+        // Open the modal instead of native confirm
+        showSkipModal(taskId);
+    }
+
+    function showSkipModal(taskId) {
+        pendingSkipTaskId = taskId;
+        const modal = document.getElementById('skip-modal');
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    function hideSkipModal() {
+        pendingSkipTaskId = null;
+        const modal = document.getElementById('skip-modal');
+        if (modal) modal.classList.add('hidden');
     }
 
     function playNotificationSound() {
@@ -317,10 +343,31 @@
         }
     }
 
-    // Inicializar: buscar sessão ativa e atualizar display
+    // Inicializar: buscar sessão ativa, atualizar display e ligar handlers da modal
     window.addEventListener('load', async () => {
         await fetchActiveSessionAndInit();
         updateTimerDisplay(secondsRemaining);
+
+        // Link modal buttons
+        const confirmBtn = document.getElementById('skip-confirm-btn');
+        const cancelBtn = document.getElementById('skip-cancel-btn');
+
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => {
+                // perform skip action: clear timer and reload
+                clearInterval(timerInterval);
+                isRunning = false;
+                hideSkipModal();
+                // keep original behavior: reload to reflect changes
+                location.reload();
+            });
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                hideSkipModal();
+            });
+        }
     });
 </script>
 @endsection
