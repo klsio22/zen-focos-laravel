@@ -53,6 +53,21 @@ class PomodoroController extends Controller
         ]);
     }
 
+    /**
+     * Cancel an active session without incrementing the task counter.
+     */
+    public function cancelSession(PomodoroSession $session)
+    {
+        $this->authorize('update', $session);
+
+        // Only allow cancelling active sessions
+        if ($session->status === 'active') {
+            $session->update(['status' => 'cancelled', 'end_time' => now()]);
+        }
+
+        return response()->json(['message' => 'Sessão cancelada']);
+    }
+
     public function getActiveSession()
     {
         $session = PomodoroSession::where('user_id', Auth::id())

@@ -1,4 +1,5 @@
-<div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-slate-300 overflow-hidden task-card" data-task-id="{{ $task->id }}">
+<div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-slate-300 overflow-hidden task-card"
+    data-task-id="{{ $task->id }}" data-estimated="{{ $task->estimated_pomodoros }}" data-completed="{{ $task->completed_pomodoros }}">
     @php
         // calcular progresso e determinar se a task já atingiu 100%
         $progress = $task->estimated_pomodoros > 0 ? ($task->completed_pomodoros / $task->estimated_pomodoros) * 100 : 0;
@@ -201,6 +202,20 @@
                     const tid = Number(card.dataset.taskId || 0);
 
                     if (tid === sessionTaskId) {
+                        // don't show timer for tasks that are already complete according to the card data
+                        const cardEstimated = parseInt(card.dataset.estimated || '0', 10);
+                        const cardCompleted = parseInt(card.dataset.completed || '0', 10);
+                        const cardIsComplete = cardEstimated > 0 && cardCompleted >= cardEstimated;
+                        if (cardIsComplete) {
+                            // ensure any existing interval is cleared and timer is hidden
+                            if (window.__taskCardTimers.has(tid)) {
+                                clearInterval(window.__taskCardTimers.get(tid));
+                                window.__taskCardTimers.delete(tid);
+                            }
+                            hideCardTimer(card);
+                            return;
+                        }
+
                         // Show timer
                         showCardTimer(card);
 
@@ -289,11 +304,36 @@
             if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
             return response.json();
         })
-        .then(data => {
-            // reflect change in UI quickly: update checkbox/data attribute and reload to refresh counts
+        .then(async data => {
+            // reflect change in UI quickly: update checkbox/data attribute
             if (target) {
                 target.dataset.completed = String(newCompleted);
             }
+
+            // If we just marked the task as completed, check for an active session and cancel it
+            if (newStatus === 'completed') {
+                try {
+                    const activeRes = await fetch('/active-session', { headers: { 'Accept': 'application/json' } });
+                    if (activeRes.ok) {
+                        const activeData = await activeRes.json();
+                        const session = activeData.session;
+                        if (session && Number(session.task_id) === Number(taskId)) {
+                            // cancel the session to stop timers (this will NOT increment completed_pomodoros)
+                            await fetch(`/sessions/${session.id}/cancel`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Accept': 'application/json'
+                                }
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error('Erro ao cancelar sessão ativa:', e);
+                }
+            }
+
+            // finally reload to reflect updated lists and counts
             setTimeout(() => location.reload(), 200);
         })
         .catch(error => {
