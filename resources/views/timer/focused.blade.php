@@ -170,7 +170,7 @@
         }
     }
 
-    // Fetch active session on load and resume timer accordingly
+    // Fetch active / paused sessions on load and resume timer accordingly
     async function fetchActiveSessionAndInit() {
         try {
             const res = await fetch('/active-session', {
@@ -182,22 +182,34 @@
 
             if (!res.ok) return;
             const data = await res.json();
-            if (data.session) {
-                activeSession = data.session;
 
-                // If the active session belongs to this task, compute remaining seconds
+            // Prefer active session if present and not paused
+            if (data.active && !data.active.is_paused) {
+                activeSession = data.active;
+
                 if (activeSession.task_id === taskId) {
                     const elapsed = Math.floor((Date.now() - new Date(activeSession.start_time).getTime()) / 1000);
                     secondsRemaining = Math.max((activeSession.duration || 25) * 60 - elapsed, 0);
 
                     if (secondsRemaining <= 0) {
-                        // session expired server-side; try to complete
                         completePomodoro(taskId);
                         return;
                     }
 
-                    // start the timer automatically to reflect real-time progress
                     startTimer();
+                }
+
+            } else if (Array.isArray(data.paused) && data.paused.length > 0) {
+                // If there's a paused session for this task, use it to show paused state
+                const pausedForThis = data.paused.find(s => Number(s.task_id) === Number(taskId));
+                if (pausedForThis) {
+                    activeSession = pausedForThis;
+                    // use remaining_seconds if provided
+                    if (typeof activeSession.remaining_seconds === 'number') {
+                        secondsRemaining = activeSession.remaining_seconds;
+                        updateTimerDisplay(secondsRemaining);
+                    }
+                    // do not auto-start if paused
                 }
             }
         } catch (err) {
@@ -211,19 +223,62 @@
         const btnPauseIcon = document.getElementById('btn-icon-pause');
 
         if (isRunning) {
-            // Pausar (client-side pause; server still marks session as active)
+            // Pausar: parar tick local e persistir estado pausado no servidor
             clearInterval(timerInterval);
             isRunning = false;
             if (btnPlayIcon) btnPlayIcon.classList.remove('hidden');
             if (btnPauseIcon) btnPauseIcon.classList.add('hidden');
             if (btnText) btnText.textContent = 'Retomar';
+
+            // If there is an activeSession on backend, persist the remaining seconds and mark paused
+            if (activeSession && activeSession.id) {
+                fetch(`/sessions/${activeSession.id}/pause`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ remaining_seconds: secondsRemaining })
+                }).then(res => res.json()).then(json => {
+                    // update local activeSession snapshot
+                    activeSession.is_paused = true;
+                    activeSession.remaining_seconds = secondsRemaining;
+                }).catch(err => console.error('Erro ao pausar sessão:', err));
+            }
+
             return;
         }
 
         // Se já existe sessão ativa no backend para esta task e o timer não está no valor inicial,
         // apenas retome a contagem localmente (start_time já existe no servidor)
         if (activeSession && activeSession.task_id === taskId && secondsRemaining < 25 * 60) {
-            startTimer();
+            // If the session is paused on the backend, resume it via API; otherwise start locally
+            if (activeSession.is_paused) {
+                try {
+                    const res = await fetch(`/sessions/${activeSession.id}/resume`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ remaining_seconds: secondsRemaining })
+                    });
+
+                    if (!res.ok) throw new Error('Falha ao retomar sessão');
+                    const data = await res.json();
+                    activeSession = data.session || activeSession;
+                    startTimer();
+                } catch (err) {
+                    console.error('Erro ao retomar sessão:', err);
+                    // fallback to local start
+                    startTimer();
+                }
+            } else {
+                startTimer();
+            }
+
             return;
         }
 
@@ -281,23 +336,24 @@
         fetch('/active-session', {
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
             }
         })
         .then(response => response.json())
         .then(data => {
-            if (data.session && data.session.id) {
-                fetch(`/sessions/${data.session.id}/complete`, {
+            const current = data.active || null;
+            if (current && current.id) {
+                fetch(`/sessions/${current.id}/complete`, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     }
                 })
                 .then(response => response.json())
                 .then(result => {
-                    // Mostrar notificação e redirecionar
                     alert('Pomodoro concluído! Parabéns!');
-                    // reset local state and reload to reflect updated task counts
                     activeSession = null;
                     secondsRemaining = 25 * 60;
                     isRunning = false;

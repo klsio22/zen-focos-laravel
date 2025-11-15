@@ -26,5 +26,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tasks/{task}/start-session', [PomodoroController::class, 'startSession'])->name('pomodoro.start');
     Route::post('/sessions/{session}/complete', [PomodoroController::class, 'completeSession'])->name('pomodoro.complete');
     Route::post('/sessions/{session}/cancel', [PomodoroController::class, 'cancelSession'])->name('pomodoro.cancel');
+    Route::post('/sessions/{session}/pause', [PomodoroController::class, 'pauseSession'])->name('pomodoro.pause');
+    Route::post('/sessions/{session}/resume', [PomodoroController::class, 'resumeSession'])->name('pomodoro.resume');
     Route::get('/active-session', [PomodoroController::class, 'getActiveSession'])->name('pomodoro.active');
 });

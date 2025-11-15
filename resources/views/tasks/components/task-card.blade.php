@@ -129,12 +129,13 @@
                 const res = await fetch('/active-session', {
                     headers: { 'Accept': 'application/json' }
                 });
-                if (!res.ok) return null;
+                if (!res.ok) return { active: null, paused: [] };
                 const data = await res.json();
-                return data.session || null;
+                // Expecting { active: ..., paused: [...] }
+                return { active: data.active || null, paused: data.paused || [] };
             } catch (e) {
                 console.error('Erro ao buscar sessão ativa:', e);
-                return null;
+                return { active: null, paused: [] };
             }
         }
 
@@ -174,13 +175,15 @@
             let activeSessionCached = null;
 
             async function sync() {
-                const session = await fetchActiveSession();
+                const data = await fetchActiveSession();
+                const active = data.active;
+                const pausedList = data.paused || [];
 
                 // find all cards
                 const cards = document.querySelectorAll('.task-card');
 
-                // If no active session, clear any running card timers
-                if (!session) {
+                // If no active nor paused sessions, clear timers and hide previews
+                if (!active && (!pausedList || pausedList.length === 0)) {
                     cards.forEach(card => {
                         const tid = Number(card.dataset.taskId || 0);
                         if (window.__taskCardTimers.has(tid)) {
@@ -193,21 +196,40 @@
                     return;
                 }
 
-                // If we have a session, compute elapsed and remaining
-                const sessionTaskId = Number(session.task_id);
-                const duration = session.duration || 25;
-                const startTime = new Date(session.start_time).getTime();
+                // If we have an active session, compute elapsed and remaining
+                let sessionTaskId = null;
+                let duration = 25;
+                let startTime = Date.now();
+                if (active) {
+                    sessionTaskId = Number(active.task_id);
+                    duration = active.duration || 25;
+                    startTime = new Date(active.start_time).getTime();
+                }
 
                 cards.forEach(card => {
                     const tid = Number(card.dataset.taskId || 0);
 
-                    if (tid === sessionTaskId) {
+                    // If there is a paused session for this card, show paused preview without ticking
+                    const pausedForCard = pausedList.find(s => Number(s.task_id) === tid);
+                    if (pausedForCard) {
+                        // show paused small timer using remaining_seconds if available
+                        showCardTimer(card);
+                        const remaining = typeof pausedForCard.remaining_seconds === 'number' ? pausedForCard.remaining_seconds : (pausedForCard.duration || 25) * 60;
+                        updateCardTimerDisplay(card, remaining, pausedForCard.duration || 25);
+                        // clear any running interval
+                        if (window.__taskCardTimers.has(tid)) {
+                            clearInterval(window.__taskCardTimers.get(tid));
+                            window.__taskCardTimers.delete(tid);
+                        }
+                        return;
+                    }
+
+                    if (active && tid === sessionTaskId) {
                         // don't show timer for tasks that are already complete according to the card data
                         const cardEstimated = parseInt(card.dataset.estimated || '0', 10);
                         const cardCompleted = parseInt(card.dataset.completed || '0', 10);
                         const cardIsComplete = cardEstimated > 0 && cardCompleted >= cardEstimated;
                         if (cardIsComplete) {
-                            // ensure any existing interval is cleared and timer is hidden
                             if (window.__taskCardTimers.has(tid)) {
                                 clearInterval(window.__taskCardTimers.get(tid));
                                 window.__taskCardTimers.delete(tid);
@@ -255,7 +277,7 @@
                     }
                 });
 
-                activeSessionCached = session;
+                activeSessionCached = active;
             }
 
             // initial sync and then poll every 5 seconds
@@ -315,18 +337,28 @@
                 try {
                     const activeRes = await fetch('/active-session', { headers: { 'Accept': 'application/json' } });
                     if (activeRes.ok) {
-                        const activeData = await activeRes.json();
-                        const session = activeData.session;
-                        if (session && Number(session.task_id) === Number(taskId)) {
-                            // cancel the session to stop timers (this will NOT increment completed_pomodoros)
-                            await fetch(`/sessions/${session.id}/cancel`, {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                    'Accept': 'application/json'
-                                }
-                            });
-                        }
+                            const activeData = await activeRes.json();
+                            const current = activeData.active || null;
+                            const pausedList = activeData.paused || [];
+                            const pausedForTask = pausedList.find(s => Number(s.task_id) === Number(taskId));
+                            // If there's an active session for this task or a paused session, cancel it
+                            if (current && Number(current.task_id) === Number(taskId)) {
+                                await fetch(`/sessions/${current.id}/cancel`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                        'Accept': 'application/json'
+                                    }
+                                });
+                            } else if (pausedForTask) {
+                                await fetch(`/sessions/${pausedForTask.id}/cancel`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                        'Accept': 'application/json'
+                                    }
+                                });
+                            }
                     }
                 } catch (e) {
                     console.error('Erro ao cancelar sessão ativa:', e);

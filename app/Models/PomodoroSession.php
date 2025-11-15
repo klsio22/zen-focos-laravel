@@ -15,7 +15,9 @@ class PomodoroSession extends Model
         'duration',
         'start_time',
         'end_time',
-        'status'
+        'status',
+        'is_paused',
+        'remaining_seconds'
     ];
 
     protected $casts = [
