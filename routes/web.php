@@ -18,6 +18,11 @@ Auth::routes();
 Route::middleware(['auth'])->group(function () {
     Route::get('/home', [TaskController::class, 'index'])->name('home');
 
+    // React preview route (developer convenience)
+    Route::get('/react-preview', function () {
+        return view('react-preview');
+    })->name('react.preview');
+
     // Tasks Routes
     Route::resource('tasks', TaskController::class);
     Route::get('/tasks/{task}/timer', [TaskController::class, 'showTimer'])->name('tasks.timer');
