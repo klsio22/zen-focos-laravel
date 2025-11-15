@@ -85,13 +85,18 @@
                     <span id="btn-text">Iniciar</span>
                 </button>
 
-                <button
-                    onclick="skipPomodoro({{ $task->id }})"
-                    class="bg-amber-600 hover:bg-amber-700 text-white px-8 py-3 rounded-full font-semibold transition-colors shadow-lg flex items-center gap-2"
-                >
-                    <x-heroicon-o-forward class="w-5 h-5" />
-                    <span>Pular</span>
-                </button>
+                @php
+                    $isLastSession = ($task->completed_pomodoros + 1) >= $task->estimated_pomodoros;
+                @endphp
+                @if($task->estimated_pomodoros > 1 && !$isLastSession)
+                    <button
+                        onclick="skipPomodoro({{ $task->id }})"
+                        class="bg-amber-600 hover:bg-amber-700 text-white px-8 py-3 rounded-full font-semibold transition-colors shadow-lg flex items-center gap-2"
+                    >
+                        <x-heroicon-o-forward class="w-5 h-5" />
+                        <span>Pular</span>
+                    </button>
+                @endif
             </div>
 
             <!-- Back Button -->
