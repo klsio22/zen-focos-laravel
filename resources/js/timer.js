@@ -46,6 +46,33 @@
     }
 
     // Fetch active / paused sessions on load and resume timer accordingly
+    function handlePausedSessions(pausedArray) {
+        const pausedForThis = pausedArray.find(s => Number(s.task_id) === Number(taskId));
+        if (!pausedForThis) return;
+
+        activeSession = pausedForThis;
+        if (typeof activeSession.remaining_seconds === 'number') {
+            secondsRemaining = activeSession.remaining_seconds;
+            updateTimerDisplay(secondsRemaining);
+        }
+        // do not auto-start if paused
+    }
+
+    function handleActiveSession(session) {
+        activeSession = session;
+        if (activeSession.task_id !== taskId) return;
+
+        const elapsed = Math.floor((Date.now() - new Date(activeSession.start_time).getTime()) / 1000);
+        secondsRemaining = Math.max((activeSession.duration || 25) * 60 - elapsed, 0);
+
+        if (secondsRemaining <= 0) {
+            completePomodoro(taskId);
+            return;
+        }
+
+        startTimer();
+    }
+
     async function fetchActiveSessionAndInit() {
         try {
             const res = await fetch('/active-session', {
@@ -60,32 +87,13 @@
 
             // Prefer active session if present and not paused
             if (data.active && !data.active.is_paused) {
-                activeSession = data.active;
+                handleActiveSession(data.active);
+                return;
+            }
 
-                if (activeSession.task_id === taskId) {
-                    const elapsed = Math.floor((Date.now() - new Date(activeSession.start_time).getTime()) / 1000);
-                    secondsRemaining = Math.max((activeSession.duration || 25) * 60 - elapsed, 0);
-
-                    if (secondsRemaining <= 0) {
-                        completePomodoro(taskId);
-                        return;
-                    }
-
-                    startTimer();
-                }
-
-            } else if (Array.isArray(data.paused) && data.paused.length > 0) {
-                // If there's a paused session for this task, use it to show paused state
-                const pausedForThis = data.paused.find(s => Number(s.task_id) === Number(taskId));
-                if (pausedForThis) {
-                    activeSession = pausedForThis;
-                    // use remaining_seconds if provided
-                    if (typeof activeSession.remaining_seconds === 'number') {
-                        secondsRemaining = activeSession.remaining_seconds;
-                        updateTimerDisplay(secondsRemaining);
-                    }
-                    // do not auto-start if paused
-                }
+            // If there's a paused session for this task, use it to show paused state
+            if (Array.isArray(data.paused) && data.paused.length > 0) {
+                handlePausedSessions(data.paused);
             }
         } catch (err) {
             console.error('Erro ao buscar sessão ativa:', err);
