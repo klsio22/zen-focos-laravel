@@ -11,7 +11,7 @@ class PomodoroController extends Controller
 {
     // Rotas protegidas aplicam o middleware auth; removido construtor para compatibilidade com Laravel 12
 
-    public function startSession(Request $request, Task $task)
+    public function startSession(Task $task)
     {
         $this->authorize('view', $task);
 

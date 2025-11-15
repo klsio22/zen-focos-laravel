@@ -7,7 +7,9 @@
         <div class="w-full max-w-md">
             <!-- Header -->
             <div class="text-center mb-8">
-                <div class="text-5xl mb-3">🚀</div>
+                <div class="text-5xl mb-3">
+                    <x-heroicon-o-rocket-launch class="w-12 h-12 text-indigo-600 mx-auto" />
+                </div>
                 <h1 class="text-3xl font-bold text-gray-800">Comece Agora</h1>
                 <p class="text-gray-600 mt-2">Crie sua conta no ZenFocos</p>
             </div>
@@ -20,7 +22,7 @@
                     <!-- Nome -->
                     <div class="mb-6">
                         <label for="name" class="block text-gray-700 font-semibold mb-2">
-                            👤 Nome Completo
+                            <x-heroicon-o-user class="inline w-5 h-5 mr-2 text-gray-500" /> Nome Completo
                         </label>
                         <input id="name" type="text"
                             class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition @error('name') border-red-500 @enderror"
@@ -35,7 +37,7 @@
                     <!-- Email -->
                     <div class="mb-6">
                         <label for="email" class="block text-gray-700 font-semibold mb-2">
-                            📧 Email
+                            <x-heroicon-o-envelope class="inline w-5 h-5 mr-2 text-gray-500" /> Email
                         </label>
                         <input id="email" type="email"
                             class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition @error('email') border-red-500 @enderror"
@@ -50,7 +52,7 @@
                     <!-- Senha -->
                     <div class="mb-6">
                         <label for="password" class="block text-gray-700 font-semibold mb-2">
-                            🔒 Senha
+                            <x-heroicon-o-lock-closed class="inline w-5 h-5 mr-2 text-gray-500" /> Senha
                         </label>
                         <input id="password" type="password"
                             class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition @error('password') border-red-500 @enderror"
@@ -65,7 +67,7 @@
                     <!-- Confirmar Senha -->
                     <div class="mb-6">
                         <label for="password-confirm" class="block text-gray-700 font-semibold mb-2">
-                            ✅ Confirmar Senha
+                            <x-heroicon-o-check class="inline w-5 h-5 mr-2 text-green-500" /> Confirmar Senha
                         </label>
                         <input id="password-confirm" type="password"
                             class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition"
@@ -75,7 +77,7 @@
                     <!-- Botão Registrar -->
                     <button type="submit"
                         class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition shadow-lg mb-4">
-                        ✨ Criar Conta
+                        <x-heroicon-o-rocket-launch class="inline w-5 h-5 mr-2" /> Criar Conta
                     </button>
 
                     <!-- Divider -->
@@ -99,8 +101,8 @@
                 </form>
 
                 <!-- Info Box -->
-                <div class="mt-6 p-4 bg-green-50 border-l-4 border-green-400 rounded">
-                    <p class="text-sm text-gray-700 font-semibold mb-2">✅ Por que se registrar?</p>
+                    <div class="mt-6 p-4 bg-green-50 border-l-4 border-green-400 rounded">
+                    <p class="text-sm text-gray-700 font-semibold mb-2"><x-heroicon-o-check-circle class="w-5 h-5 inline mr-2 text-green-600" /> Por que se registrar?</p>
                     <ul class="text-sm text-gray-600 space-y-1">
                         <li>✓ Organize suas tarefas</li>
                         <li>✓ Use a técnica Pomodoro</li>
@@ -109,10 +111,10 @@
                 </div>
             </div>
 
-            <!-- Footer -->
-            <div class="text-center mt-6 text-gray-600 text-sm">
-                <p>&copy; 2025 ZenFocos - Desenvolvido com ❤️</p>
-            </div>
+                <!-- Footer -->
+                <div class="text-center mt-6 text-gray-600 text-sm">
+                    <p>&copy; 2025 ZenFocos - Desenvolvido com <x-heroicon-o-heart class="w-4 h-4 inline text-red-500" /></p>
+                </div>
         </div>
     </div>
 @endsection
