@@ -135,6 +135,6 @@
         };
     </script>
 
-    @vite(['resources/js/timer.js'])
+    @vite(['resources/js/timer-store.js', 'resources/js/timer.js'])
 
 @endsection

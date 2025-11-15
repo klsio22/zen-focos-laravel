@@ -1,6 +1,6 @@
 // timer.js
 // JS extraído de resources/views/timer/focused.blade.php
-// Expects a global `window.__timerConfig = { taskId, estimatedPomodoros, completedPomodoros }` to be set before this module loads.
+// Usa window.timerStore para estado centralizado e sincronização em tempo real
 
 (function () {
   const cfg = globalThis.__timerConfig || {};
@@ -8,7 +8,7 @@
   let timerInterval = null;
   let isRunning = false;
   let secondsRemaining = 25 * 60;
-  let activeSession = null; // will hold session data from backend if any
+  let activeSession = null;
 
   function formatTime(seconds) {
     const mins = Math.floor(seconds / 60);
@@ -232,9 +232,17 @@
     if (btnPauseIcon) btnPauseIcon.classList.remove("hidden");
     if (btnText) btnText.textContent = "Pausar";
 
+    // Limpar interval anterior se houver (idempotent)
+    if (timerInterval) clearInterval(timerInterval);
+
     timerInterval = setInterval(() => {
       secondsRemaining--;
       updateTimerDisplay(secondsRemaining);
+
+      // Atualizar store também durante ticking local
+      if (window.timerStore) {
+        window.timerStore.tick();
+      }
 
       if (secondsRemaining <= 0) {
         clearInterval(timerInterval);
@@ -344,6 +352,24 @@
     if (cancelBtn) {
       cancelBtn.addEventListener("click", () => {
         hideSkipModal();
+      });
+    }
+
+    // ========== STORE LISTENER ==========
+    // Sincronizar página do timer com mudanças na store global (vindas de cards ou SSE)
+    if (window.timerStore) {
+      window.timerStore.subscribe((storeState) => {
+        // Se a tarefa desta página está na store e está ativa
+        if (storeState.taskId === taskId) {
+          // Sincronizar segundos restantes
+          secondsRemaining = storeState.remaining || 0;
+          updateTimerDisplay(secondsRemaining);
+
+          // Se estava pausado e agora está ativo, iniciar ticking
+          if (!isRunning && storeState.taskId !== null) {
+            startTimer();
+          }
+        }
       });
     }
 
