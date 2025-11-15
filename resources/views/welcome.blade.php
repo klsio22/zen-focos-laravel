@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZenFocos - Gerencie suas Tarefas com Técnica Pomodoro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
+
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
     <nav class="bg-white shadow-lg">
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -14,7 +16,8 @@
             </div>
             <div class="flex space-x-4 items-center">
                 <a href="{{ route('login') }}" class="text-gray-700 hover:text-blue-600 font-medium">Login</a>
-                <a href="{{ route('register') }}" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                <a href="{{ route('register') }}"
+                    class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
                     Começar Agora
                 </a>
             </div>
@@ -30,10 +33,12 @@
                 Organize suas tarefas, mantenha o foco e acompanhe seu progresso
             </p>
             <div class="flex justify-center space-x-4">
-                <a href="{{ route('register') }}" class="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition text-lg font-medium shadow-lg">
+                <a href="{{ route('register') }}"
+                    class="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition text-lg font-medium shadow-lg">
                     Criar Conta Grátis
                 </a>
-                <a href="{{ route('login') }}" class="bg-white text-blue-600 px-8 py-4 rounded-lg hover:bg-gray-50 transition text-lg font-medium shadow-lg border-2 border-blue-600">
+                <a href="{{ route('login') }}"
+                    class="bg-white text-blue-600 px-8 py-4 rounded-lg hover:bg-gray-50 transition text-lg font-medium shadow-lg border-2 border-blue-600">
                     Já tenho conta
                 </a>
             </div>
@@ -105,7 +110,8 @@
         <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-xl p-12 text-center text-white">
             <h2 class="text-3xl font-bold mb-4">Pronto para ser mais produtivo?</h2>
             <p class="text-xl mb-8">Comece agora e transforme sua forma de trabalhar!</p>
-            <a href="{{ route('register') }}" class="bg-white text-blue-600 px-8 py-4 rounded-lg hover:bg-gray-100 transition text-lg font-medium inline-block shadow-lg">
+            <a href="{{ route('register') }}"
+                class="bg-white text-blue-600 px-8 py-4 rounded-lg hover:bg-gray-100 transition text-lg font-medium inline-block shadow-lg">
                 Criar Minha Conta Gratuita
             </a>
         </div>
@@ -124,4 +130,5 @@
         </div>
     </footer>
 </body>
+
 </html>

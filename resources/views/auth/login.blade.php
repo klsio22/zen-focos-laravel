@@ -25,7 +25,7 @@
                     <input
                         id="email"
                         type="email"
-                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition @error('email') border-red-500 @enderror"
+                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-zinc-950 focus:outline-none focus:border-blue-500 transition @error('email') border-red-500 @enderror"
                         name="email"
                         value="{{ old('email') }}"
                         placeholder="seu@email.com"
@@ -46,7 +46,7 @@
                     <input
                         id="password"
                         type="password"
-                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition @error('password') border-red-500 @enderror"
+                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-zinc-950 focus:outline-none focus:border-blue-500 transition @error('password') border-red-500 @enderror"
                         name="password"
                         placeholder="••••••••"
                         required

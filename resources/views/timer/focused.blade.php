@@ -79,8 +79,8 @@
                     onclick="toggleTimer({{ $task->id }})"
                     class="bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white px-8 py-3 rounded-full font-semibold transition-colors shadow-lg flex items-center gap-2"
                 >
-                    <span id="btn-icon">⏸</span>
-                    <span id="btn-text">Pausar</span>
+                    <span id="btn-icon">▶️</span>
+                    <span id="btn-text">Iniciar</span>
                 </button>
 
                 <button
@@ -112,6 +112,7 @@
     let timerInterval = null;
     let isRunning = false;
     let secondsRemaining = 25 * 60;
+    let activeSession = null; // will hold session data from backend if any
 
     function formatTime(seconds) {
         const mins = Math.floor(seconds / 60);
@@ -145,44 +146,93 @@
         }
     }
 
-    function toggleTimer(taskId) {
+    // Fetch active session on load and resume timer accordingly
+    async function fetchActiveSessionAndInit() {
+        try {
+            const res = await fetch('/active-session', {
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.session) {
+                activeSession = data.session;
+
+                // If the active session belongs to this task, compute remaining seconds
+                if (activeSession.task_id === taskId) {
+                    const elapsed = Math.floor((Date.now() - new Date(activeSession.start_time).getTime()) / 1000);
+                    secondsRemaining = Math.max((activeSession.duration || 25) * 60 - elapsed, 0);
+
+                    if (secondsRemaining <= 0) {
+                        // session expired server-side; try to complete
+                        completePomodoro(taskId);
+                        return;
+                    }
+
+                    // start the timer automatically to reflect real-time progress
+                    startTimer();
+                }
+            }
+        } catch (err) {
+            console.error('Erro ao buscar sessão ativa:', err);
+        }
+    }
+
+    async function toggleTimer(taskId) {
+        const btnIcon = document.getElementById('btn-icon');
+        const btnText = document.getElementById('btn-text');
+
         if (isRunning) {
-            // Pausar
+            // Pausar (client-side pause; server still marks session as active)
             clearInterval(timerInterval);
             isRunning = false;
-            document.getElementById('btn-icon').textContent = '▶';
-            document.getElementById('btn-text').textContent = 'Retomar';
-        } else {
-            // Se ainda não foi iniciado, começar sessão no backend
-            if (secondsRemaining === 25 * 60) {
-                fetch(`/tasks/${taskId}/start-session`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Sessão iniciada:', data);
-                    startTimer();
-                })
-                .catch(error => {
-                    console.error('Erro:', error);
-                    alert('❌ Erro ao iniciar sessão');
-                });
-            } else {
-                // Retomar timer já iniciado
-                startTimer();
-            }
+            if (btnIcon) btnIcon.textContent = '▶️';
+            if (btnText) btnText.textContent = 'Retomar';
+            return;
+        }
+
+        // Se já existe sessão ativa no backend para esta task e o timer não está no valor inicial,
+        // apenas retome a contagem localmente (start_time já existe no servidor)
+        if (activeSession && activeSession.task_id === taskId && secondsRemaining < 25 * 60) {
+            startTimer();
+            return;
+        }
+
+        // Caso contrário, iniciar nova sessão no backend
+        try {
+            const res = await fetch(`/tasks/${taskId}/start-session`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!res.ok) throw new Error('Resposta inválida ao iniciar sessão');
+
+            const data = await res.json();
+            activeSession = data.session;
+            console.log('Sessão iniciada:', activeSession);
+            // recompute secondsRemaining in case backend provides duration/start_time differences
+            const elapsed = Math.floor((Date.now() - new Date(activeSession.start_time).getTime()) / 1000);
+            secondsRemaining = Math.max((activeSession.duration || 25) * 60 - elapsed, 0);
+            startTimer();
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('❌ Erro ao iniciar sessão');
         }
     }
 
     function startTimer() {
         isRunning = true;
-        document.getElementById('btn-icon').textContent = '⏸';
-        document.getElementById('btn-text').textContent = 'Pausar';
+        const btnIcon = document.getElementById('btn-icon');
+        const btnText = document.getElementById('btn-text');
+        if (btnIcon) btnIcon.textContent = '⏸️';
+        if (btnText) btnText.textContent = 'Pausar';
 
         timerInterval = setInterval(() => {
             secondsRemaining--;
@@ -218,6 +268,10 @@
                 .then(result => {
                     // Mostrar notificação e redirecionar
                     alert('✅ Pomodoro concluído! Parabéns!');
+                    // reset local state and reload to reflect updated task counts
+                    activeSession = null;
+                    secondsRemaining = 25 * 60;
+                    isRunning = false;
                     location.reload();
                 })
                 .catch(err => console.error('Erro ao completar:', err));
@@ -256,8 +310,11 @@
         }
     }
 
-    // Inicializar display
-    updateTimerDisplay(secondsRemaining);
+    // Inicializar: buscar sessão ativa e atualizar display
+    window.addEventListener('load', async () => {
+        await fetchActiveSessionAndInit();
+        updateTimerDisplay(secondsRemaining);
+    });
 </script>
 @endsection
 @endsection
