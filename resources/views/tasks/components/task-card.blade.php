@@ -1,14 +1,23 @@
 <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-slate-300 overflow-hidden">
+    @php
+        // calcular progresso e determinar se a task já atingiu 100%
+        $progress = $task->estimated_pomodoros > 0 ? ($task->completed_pomodoros / $task->estimated_pomodoros) * 100 : 0;
+        $isComplete = $task->estimated_pomodoros > 0 && $task->completed_pomodoros >= $task->estimated_pomodoros;
+        // displayStatus respeita o status real, mas força 'completed' quando atingido 100%
+        $displayStatus = $isComplete ? 'completed' : $task->status;
+    @endphp
     <!-- Header com checkbox e título -->
     <div class="p-4 pb-3 border-b border-slate-300">
         <div class="flex items-start gap-3">
-            <input type="checkbox"
-                   class="mt-1.5 w-5 h-5 rounded border-2 border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                   {{ $task->status === 'completed' ? 'checked' : '' }}
-                   onchange="updateTaskStatus({{ $task->id }}, this.checked)"
-            >
+         <input type="checkbox"
+             class="mt-1.5 w-5 h-5 rounded border-2 border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            data-estimated="{{ $task->estimated_pomodoros }}"
+            data-completed="{{ $task->completed_pomodoros }}"
+             {{ $displayStatus === 'completed' ? 'checked' : '' }}
+             onchange="updateTaskStatus({{ $task->id }}, this.checked, event)"
+         >
             <div class="flex-1">
-                <h3 class="text-lg font-semibold text-slate-900 {{ $task->status === 'completed' ? 'line-through text-slate-500' : '' }}">
+                <h3 class="text-lg font-semibold text-slate-900 {{ $displayStatus === 'completed' ? 'line-through text-slate-500' : '' }}">
                     {{ $task->title }}
                 </h3>
                 @if($task->description)
@@ -38,9 +47,6 @@
         </div>
 
         <!-- Progress Bar -->
-        @php
-            $progress = $task->estimated_pomodoros > 0 ? ($task->completed_pomodoros / $task->estimated_pomodoros) * 100 : 0;
-        @endphp
         <div class="mt-3 w-full bg-slate-300 rounded-full h-2 overflow-hidden">
             <div class="bg-green-500 h-full transition-all rounded-full" style="width: {{ $progress }}%"></div>
         </div>
@@ -52,14 +58,14 @@
     <!-- Status Badge -->
     <div class="p-4 pb-3 border-b border-slate-300">
         <div class="flex justify-center">
-            <span class="px-4 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2
-                {{ $task->status === 'completed' ? 'bg-green-100 text-green-800' :
-                   ($task->status === 'in_progress' ? 'bg-amber-100 text-amber-800' :
+                <span class="px-4 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2
+                {{ $displayStatus === 'completed' ? 'bg-green-100 text-green-800' :
+                   ($displayStatus === 'in_progress' ? 'bg-amber-100 text-amber-800' :
                     'bg-slate-200 text-slate-800') }}">
-                @if($task->status === 'completed')
+                @if($displayStatus === 'completed')
                     <x-heroicon-o-check-circle class="w-5 h-5" />
                     <span>Concluída</span>
-                @elseif($task->status === 'in_progress')
+                @elseif($displayStatus === 'in_progress')
                     <x-heroicon-o-arrow-path class="w-5 h-5 animate-spin" />
                     <span>Em Progresso</span>
                 @else
@@ -72,7 +78,7 @@
 
     <!-- Action Buttons -->
     <div class="p-4 flex flex-col gap-2">
-        @if($task->status !== 'completed')
+        @if($displayStatus !== 'completed')
             <a href="{{ route('tasks.timer', $task) }}"
                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
             >
@@ -101,11 +107,27 @@
 </div>
 
 <script>
-    function updateTaskStatus(taskId, isChecked) {
-        const status = isChecked ? 'completed' : 'pending';
-        const cardElement = event.target.closest('.bg-white');
-        const titleElement = cardElement.querySelector('h3');
+    function updateTaskStatus(taskId, isChecked, evt) {
+        // evt may be passed from the onchange handler
+        const target = evt ? evt.target : null;
+        const cardElement = target ? target.closest('.bg-white') : null;
+        const titleElement = cardElement ? cardElement.querySelector('h3') : null;
         const title = titleElement ? titleElement.textContent.trim() : '';
+
+        // read data attributes to compute new completed_pomodoros
+        const estimated = target ? parseInt(target.dataset.estimated || '0', 10) : 0;
+        const completed = target ? parseInt(target.dataset.completed || '0', 10) : 0;
+
+        // If user checks the box, consider it fully completed (set completed = estimated)
+        // If user unchecks, decrement completed by 1 (but not below 0) so it returns to previous progress
+        let newCompleted = completed;
+        if (isChecked) {
+            newCompleted = estimated;
+        } else {
+            newCompleted = Math.max(completed - 1, 0);
+        }
+
+        const newStatus = newCompleted >= estimated && estimated > 0 ? 'completed' : 'pending';
 
         fetch(`/tasks/${taskId}`, {
             method: 'PUT',
@@ -115,24 +137,26 @@
                 'Accept': 'application/json'
             },
             body: JSON.stringify({
-                status: status,
+                status: newStatus,
                 title: title,
                 description: '',
-                estimated_pomodoros: 1
+                estimated_pomodoros: estimated || 1,
+                completed_pomodoros: newCompleted
             })
         })
         .then(response => {
-            if (!response.ok) {
-                throw new Error(`Erro HTTP: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
             return response.json();
         })
         .then(data => {
-            console.log('Status atualizado:', data);
-            setTimeout(() => location.reload(), 300);
+            // reflect change in UI quickly: update checkbox/data attribute and reload to refresh counts
+            if (target) {
+                target.dataset.completed = String(newCompleted);
+            }
+            setTimeout(() => location.reload(), 200);
         })
         .catch(error => {
-            console.error('Erro completo:', error);
+            console.error('Erro ao atualizar status:', error);
             alert('❌ Erro ao atualizar status: ' + error.message);
         });
     }

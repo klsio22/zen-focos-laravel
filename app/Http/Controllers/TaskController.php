@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Arr;
 
 class TaskController extends Controller
 {
@@ -55,10 +56,23 @@ class TaskController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'status' => 'required|in:pending,in_progress,completed',
-            'estimated_pomodoros' => 'required|integer|min:1'
+            'estimated_pomodoros' => 'required|integer|min:1',
+            'completed_pomodoros' => 'nullable|integer|min:0'
         ]);
 
-        $task->update($validated);
+        // Update core fields
+        $task->update(
+            array_filter(
+                Arr::only($validated, ['title', 'description', 'status', 'estimated_pomodoros']),
+                fn($v) => !is_null($v)
+            )
+        );
+
+        // If completed_pomodoros was provided, update it explicitly
+        if (array_key_exists('completed_pomodoros', $validated) && !is_null($validated['completed_pomodoros'])) {
+            $task->completed_pomodoros = $validated['completed_pomodoros'];
+            $task->save();
+        }
 
         // Se for uma requisição AJAX/JSON, retornar JSON
         if ($request->wantsJson()) {

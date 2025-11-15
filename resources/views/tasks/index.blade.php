@@ -22,9 +22,20 @@
     @if($tasks->count() > 0)
         <!-- Grouped by Status -->
         @php
-            $pending = $tasks->where('status', 'pending');
-            $inProgress = $tasks->where('status', 'in_progress');
-            $completed = $tasks->where('status', 'completed');
+            // Agrupar considerando progresso real: se completed_pomodoros >= estimated_pomodoros => concluído
+            $completed = $tasks->filter(function($t) {
+                return ($t->estimated_pomodoros > 0 && $t->completed_pomodoros >= $t->estimated_pomodoros) || $t->status === 'completed';
+            });
+
+            $inProgress = $tasks->filter(function($t) {
+                $isComplete = ($t->estimated_pomodoros > 0 && $t->completed_pomodoros >= $t->estimated_pomodoros);
+                return !$isComplete && $t->status === 'in_progress';
+            });
+
+            $pending = $tasks->filter(function($t) {
+                $isComplete = ($t->estimated_pomodoros > 0 && $t->completed_pomodoros >= $t->estimated_pomodoros);
+                return !$isComplete && ($t->status === 'pending' || !$t->status);
+            });
         @endphp
 
         <!-- Pending Tasks -->
