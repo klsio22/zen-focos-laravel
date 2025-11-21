@@ -74,7 +74,6 @@ if (!globalThis.__taskCardTimerInit) {
     function ensurePreviewVisibleForPending() {
       const cards = document.querySelectorAll(".task-card");
       nodeListForEach(cards, (card) => {
-        const tid = Number(card.dataset.taskId || 0);
         const cardEstimated = Number.parseInt(
           card.dataset.estimated || "0",
           10
@@ -219,8 +218,8 @@ if (!globalThis.__taskCardTimerInit) {
     updateStoreFromServer();
 
     // Se store está disponível, subscribir a mudanças
-    if (window.timerStore) {
-      window.timerStore.subscribe((storeState) => {
+    if (globalThis.timerStore) {
+      globalThis.timerStore.subscribe((storeState) => {
         updateAllCardsFromStore(storeState);
       });
     }
