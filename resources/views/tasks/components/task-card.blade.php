@@ -50,7 +50,8 @@
         </div>
         <!-- Small active timer preview (hidden unless this task has an active session) -->
         <div class="mt-3 flex items-center justify-center">
-            <div id="task-timer-{{ $task->id }}" class="{{ $displayStatus === 'pending' ? 'task-small-timer items-center gap-2 text-slate-700' : 'task-small-timer hidden items-center gap-2 text-slate-700' }}">
+            <div id="task-timer-{{ $task->id }}"
+                class="{{ $displayStatus === 'pending' ? 'task-small-timer items-center gap-2 text-slate-700' : 'task-small-timer hidden items-center gap-2 text-slate-700' }}">
                 <svg width="40" height="40" viewBox="0 0 100 100" class="mr-2">
                     <circle cx="50" cy="50" r="44" stroke="#e2e8f0" stroke-width="8" fill="none" />
                     <circle cx="50" cy="50" r="44" stroke="#3b82f6" stroke-width="8" fill="none"

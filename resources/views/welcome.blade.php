@@ -120,7 +120,8 @@
         </div>
 
         <div class="text-center mt-12 text-gray-600">
-            <p class="mb-2"><x-heroicon-o-sparkles class="w-5 h-5 inline mr-2 text-yellow-500" /> Dica: Já tem uma conta de teste?</p>
+            <p class="mb-2"><x-heroicon-o-sparkles class="w-5 h-5 inline mr-2 text-yellow-500" /> Dica: Já tem uma
+                conta de teste?</p>
             <p class="text-sm">
                 Email: <strong>teste@zenfocos.com</strong> | Senha: <strong>senha123</strong>
             </p>
@@ -129,7 +130,8 @@
 
     <footer class="bg-white shadow-lg mt-16 py-8">
         <div class="container mx-auto px-4 text-center text-gray-600">
-            <p>&copy; 2025 ZenFocos - Desenvolvido com <x-heroicon-o-heart class="w-4 h-4 inline text-red-500" /> usando Laravel</p>
+            <p>&copy; 2025 ZenFocos - Desenvolvido com <x-heroicon-o-heart class="w-4 h-4 inline text-red-500" /> usando
+                Laravel</p>
         </div>
     </footer>
 </body>
