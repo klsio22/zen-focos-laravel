@@ -232,101 +232,88 @@ if (!globalThis.__taskCardTimerInit) {
 }
 
 // Expose the updateTaskStatus function globally so existing inline onchange handlers keep working
-globalThis.updateTaskStatus = async function updateTaskStatus(
-  taskId,
-  isChecked,
-  evt
-) {
-  // evt may be passed from the onchange handler
+/* Helpers extracted to reduce cognitive complexity of the main function */
+function computeNewCompleted(estimated, completed, isChecked) {
+  // Quando marcado: considerar a task totalmente concluída (completed = estimated)
+  // Quando desmarcado: voltar ao estado inicial (0 concluídos)
+  if (isChecked) return estimated;
+  return 0;
+}
+
+async function sendTaskUpdate(taskId, payload) {
+  const res = await fetch(`/tasks/${taskId}`, {
+    method: "PUT",
+    headers: {
+      "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Erro HTTP: ${res.status}`);
+  return res.json();
+}
+
+async function cancelSessionById(sessionId) {
+  return fetch(`/sessions/${sessionId}/cancel`, {
+    method: "POST",
+    headers: {
+      "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+      Accept: "application/json",
+    },
+  });
+}
+
+async function cancelActiveOrPausedForTask(taskId) {
+  try {
+    const activeRes = await fetch("/active-session", { headers: { Accept: "application/json" } });
+    if (!activeRes.ok) return;
+    const activeData = await activeRes.json();
+    const current = activeData.active || null;
+    const pausedList = activeData.paused || [];
+
+    if (current && Number(current.task_id) === Number(taskId)) {
+      await cancelSessionById(current.id);
+      return;
+    }
+
+    const pausedForTask = pausedList.find((s) => Number(s.task_id) === Number(taskId));
+    if (pausedForTask) {
+      await cancelSessionById(pausedForTask.id);
+    }
+  } catch (e) {
+    console.error("Erro ao cancelar sessão ativa:", e);
+  }
+}
+
+globalThis.updateTaskStatus = async function updateTaskStatus(taskId, isChecked, evt) {
   const target = evt ? evt.target : null;
   const cardElement = target ? target.closest(".bg-white") : null;
   const titleElement = cardElement ? cardElement.querySelector("h3") : null;
   const title = titleElement ? titleElement.textContent.trim() : "";
 
-  // read data attributes to compute new completed_pomodoros
   const estimated = target ? parseInt(target.dataset.estimated || "0", 10) : 0;
   const completed = target ? parseInt(target.dataset.completed || "0", 10) : 0;
 
-  // If user checks the box, consider it fully completed (set completed = estimated)
-  // If user unchecks, decrement completed by 1 (but not below 0) so it returns to previous progress
-  let newCompleted = completed;
-  if (isChecked) {
-    newCompleted = estimated;
-  } else {
-    newCompleted = Math.max(completed - 1, 0);
-  }
-
-  const newStatus =
-    newCompleted >= estimated && estimated > 0 ? "completed" : "pending";
+  const newCompleted = computeNewCompleted(estimated, completed, isChecked);
+  const newStatus = newCompleted >= estimated && estimated > 0 ? "completed" : "pending";
 
   try {
-    const response = await fetch(`/tasks/${taskId}`, {
-      method: "PUT",
-      headers: {
-        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
-          .content,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        status: newStatus,
-        title: title,
-        description: "",
-        estimated_pomodoros: estimated || 1,
-        completed_pomodoros: newCompleted,
-      }),
+    await sendTaskUpdate(taskId, {
+      status: newStatus,
+      title: title,
+      description: "",
+      estimated_pomodoros: estimated || 1,
+      completed_pomodoros: newCompleted,
     });
 
-    if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
-    await response.json();
+    if (target) target.dataset.completed = String(newCompleted);
 
-    // reflect change in UI quickly: update checkbox/data attribute
-    if (target) {
-      target.dataset.completed = String(newCompleted);
-    }
-
-    // If we just marked the task as completed, check for an active session and cancel it
     if (newStatus === "completed") {
-      try {
-        const activeRes = await fetch("/active-session", {
-          headers: { Accept: "application/json" },
-        });
-        if (activeRes.ok) {
-          const activeData = await activeRes.json();
-          const current = activeData.active || null;
-          const pausedList = activeData.paused || [];
-          const pausedForTask = pausedList.find(
-            (s) => Number(s.task_id) === Number(taskId)
-          );
-          // If there's an active session for this task or a paused session, cancel it
-          if (current && Number(current.task_id) === Number(taskId)) {
-            await fetch(`/sessions/${current.id}/cancel`, {
-              method: "POST",
-              headers: {
-                "X-CSRF-TOKEN": document.querySelector(
-                  'meta[name="csrf-token"]'
-                ).content,
-                Accept: "application/json",
-              },
-            });
-          } else if (pausedForTask) {
-            await fetch(`/sessions/${pausedForTask.id}/cancel`, {
-              method: "POST",
-              headers: {
-                "X-CSRF-TOKEN": document.querySelector(
-                  'meta[name="csrf-token"]'
-                ).content,
-                Accept: "application/json",
-              },
-            });
-          }
-        }
-      } catch (e) {
-        console.error("Erro ao cancelar sessão ativa:", e);
-      }
+      await cancelActiveOrPausedForTask(taskId);
     }
 
-    // finally reload to reflect updated lists and counts
+    // brief delay to allow server-side changes to settle
     setTimeout(() => location.reload(), 200);
   } catch (error) {
     console.error("Erro ao atualizar status:", error);
