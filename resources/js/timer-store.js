@@ -1,6 +1,6 @@
 // resources/js/timer-store.js
-// Global store para sincronização de estado do timer entre componentes
-// Gerencia: sessão ativa, sessões pausadas, e estado local para cada tarefa
+// Global timer state store used by timer and task cards.
+// Manages active session, paused sessions and local state.
 
 (() => {
   const STORE_KEY = '__timerState';
@@ -12,10 +12,10 @@
     remaining: 25 * 60,
     isPaused: false,
     startTime: null,
-    pausedList: [], // Array de tasks com sessão pausada
+    pausedList: [], // Array of paused session objects
   };
 
-  // Helpers para salvar/carregar estado
+  // Helpers to save/load state
   const save = (s) => {
     window[STORE_KEY] = s;
   };
@@ -52,23 +52,22 @@
       const state = { ...DEFAULT };
 
       if (payload.active && !payload.active.is_paused) {
-        // Sessão ativa em andamento
+        // Active session in progress
         state.taskId = Number(payload.active.task_id);
         state.duration = payload.active.duration || 25;
         state.startTime = new Date(payload.active.start_time).getTime();
 
-        // Calcular tempo decorrido desde início
+        // Calculate elapsed time since start
         const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
         state.remaining = Math.max(state.duration * 60 - elapsed, 0);
         state.isPaused = false;
       } else {
-        // Sem sessão ativa
+        // No active session
         state.taskId = null;
         state.remaining = 25 * 60;
         state.isPaused = false;
       }
-
-      // Guardar lista de sessões pausadas para acesso por card individual
+      // Save paused sessions list for cards
       if (Array.isArray(payload.paused) && payload.paused.length > 0) {
         state.pausedList = payload.paused;
         savePausedList(payload.paused);
@@ -79,7 +78,7 @@
 
       save(state);
 
-      // Disparar evento para que listeners (cards, timer) se atualizem
+      // Dispatch event so listeners (cards, timer) update
       globalThis.dispatchEvent(
         new CustomEvent('timer-store-updated', { detail: state })
       );
@@ -88,7 +87,7 @@
     },
 
     /**
-     * Atualizar estado pausado de uma tarefa específica
+     * Set paused state for a specific task
      * @param {number} taskId
      * @param {number} remainingSeconds
      */
@@ -106,13 +105,13 @@
     },
 
     /**
-     * Chamar durante ticking local (a cada 1s no timer focused page)
-     * Decrementa remaining e dispara evento
+     * Called during local ticking (every 1s on focused timer page).
+     * Decrements remaining and emits update.
      */
     tick() {
       const s = load();
 
-      // Só fazer tick se há sessão ativa E não está pausada
+      // Only tick if there is an active session and it is not paused
       if (s.taskId === null || s.isPaused) return;
 
       s.remaining = Math.max(s.remaining - 1, 0);
@@ -124,9 +123,9 @@
     },
 
     /**
-     * Obter tempo restante para uma tarefa pausada específica
+     * Get remaining time for a paused task
      * @param {number} taskId
-     * @returns {number} remaining seconds or null
+     * @returns {number|null} remaining seconds or null
      */
     getPausedTimeForTask(taskId) {
       const paused = loadPausedList();
@@ -136,7 +135,7 @@
     },
 
     /**
-     * Resetar store para estado padrão
+     * Reset store to default state
      */
     reset() {
       save({ ...DEFAULT });
@@ -147,7 +146,7 @@
     },
 
     /**
-     * Adicionar listener para mudanças de estado
+     * Subscribe to store updates
      * @param {Function} callback
      */
     subscribe(callback) {

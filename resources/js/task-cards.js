@@ -1,7 +1,6 @@
 // task-cards.js
 // JS extracted from resources/views/tasks/components/task-card.blade.php
-// Usa store global (window.timerStore) para sincronização em tempo real
-// Cada card atualiza independentemente baseado no estado centralizado
+// Uses global `window.timerStore` for real-time synchronization.
 
 // Initialize task-card timers once per page
 if (!globalThis.__taskCardTimerInit) {
@@ -27,7 +26,7 @@ if (!globalThis.__taskCardTimerInit) {
     }
   }
 
-  // Atualizar store global com dados obtidos
+  // Update global store with server data
   async function updateStoreFromServer() {
     if (!window.timerStore) return;
     const data = await fetchActiveSession();
@@ -99,7 +98,7 @@ if (!globalThis.__taskCardTimerInit) {
       });
     }
 
-    // Processar cada card individualmente baseado no estado da store
+    // Update each card based on store state
     function updateAllCardsFromStore(storeState) {
       const cards = document.querySelectorAll(".task-card");
       const pausedList = storeState.pausedList || [];
@@ -107,7 +106,7 @@ if (!globalThis.__taskCardTimerInit) {
       nodeListForEach(cards, (card) => {
         const tid = Number(card.dataset.taskId || 0);
 
-        // Verificar se é card completado
+        // Check if card is complete
         const cardEstimated = Number.parseInt(
           card.dataset.estimated || "0",
           10
@@ -128,21 +127,21 @@ if (!globalThis.__taskCardTimerInit) {
           return;
         }
 
-        // Verificar se há sessão ativa para este card
+        // Check active session for this card
         if (storeState.taskId === tid) {
-          // Card com sessão ativa: fazer ticking
+          // Active session: start ticking
           handleActiveCardFromStore(card, tid, storeState);
           return;
         }
 
-        // Verificar se há sessão pausada para este card
+        // Check paused session for this card
         const pausedForCard = pausedList.find((s) => Number(s.task_id) === tid);
         if (pausedForCard) {
           handlePausedCardFromStore(card, tid, pausedForCard);
           return;
         }
 
-        // Card sem sessão ativa nem pausada: mostrar preview padrão
+        // No active/paused session: show default preview
         handleInactiveCard(card, tid);
       });
     }
@@ -150,13 +149,13 @@ if (!globalThis.__taskCardTimerInit) {
     function handleActiveCardFromStore(card, tid, storeState) {
       showCardTimer(card);
 
-      // Se já há um interval para este card, limpar
+      // Clear existing interval for this card
       if (globalThis.__taskCardTimers.has(tid)) {
         clearInterval(globalThis.__taskCardTimers.get(tid));
         globalThis.__taskCardTimers.delete(tid);
       }
 
-      // Usar remaining da store
+      // Use remaining from store
       let secondsRemaining = storeState.remaining || 0;
       updateCardTimerDisplay(
         card,
@@ -164,7 +163,7 @@ if (!globalThis.__taskCardTimerInit) {
         storeState.duration || 25
       );
 
-      // Fazer ticking sincronizado com a store
+      // Start ticking synced with store
       const intervalId = setInterval(() => {
         secondsRemaining = Math.max(secondsRemaining - 1, 0);
         updateCardTimerDisplay(
@@ -191,7 +190,7 @@ if (!globalThis.__taskCardTimerInit) {
           : (pausedForCard.duration || 25) * 60;
       updateCardTimerDisplay(card, remaining, pausedForCard.duration || 25);
 
-      // Limpar qualquer interval para este card
+      // Clear any existing interval for this card
       if (globalThis.__taskCardTimers.has(tid)) {
         clearInterval(globalThis.__taskCardTimers.get(tid));
         globalThis.__taskCardTimers.delete(tid);

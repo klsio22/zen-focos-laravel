@@ -1,6 +1,5 @@
 // timer.js
-// JS extraído de resources/views/timer/focused.blade.php
-// Usa window.timerStore para estado centralizado e sincronização em tempo real
+// Client-side logic for the focused timer page. Uses global `window.timerStore` for sync.
 
 (function () {
   const cfg = globalThis.__timerConfig || {};
@@ -22,18 +21,18 @@
     const totalSeconds = 25 * 60;
     const percent = (seconds / totalSeconds) * 100;
 
-    // Atualizar texto
+    // Update display text
     const disp = document.getElementById("timer-display");
     if (disp) disp.textContent = formatTime(seconds);
 
-    // Atualizar círculo
+    // Update progress circle
     const prog = document.getElementById("timer-progress");
     if (prog) {
       const circumference = 565.48; // 2 * π * 90
       const offset = circumference - (circumference * percent) / 100;
       prog.style.strokeDashoffset = offset;
 
-      // Mudar cor baseado no tempo
+      // Change color based on remaining time
       if (seconds > 300) {
         // > 5 minutos
         prog.classList.remove("text-orange-500", "text-red-600");
@@ -114,7 +113,7 @@
   }
 
   async function toggleTimer(id) {
-    // keep the top-level function linear by delegating flows to small helpers
+    // Keep top-level function linear by delegating flows to small helpers
     if (isRunning) {
       await pauseSession();
       return;
@@ -130,7 +129,7 @@
   }
 
   async function pauseSession() {
-    // Pausar: parar tick local e persistir estado pausado no servidor
+    // Pause: stop local tick and persist paused state to server
     const btnText = document.getElementById("btn-text");
     const btnPlayIcon = document.getElementById("btn-icon-play");
     const btnPauseIcon = document.getElementById("btn-icon-pause");
@@ -232,14 +231,14 @@
     if (btnPauseIcon) btnPauseIcon.classList.remove("hidden");
     if (btnText) btnText.textContent = "Pausar";
 
-    // Limpar interval anterior se houver (idempotent)
+    // Clear previous interval if any (idempotent)
     if (timerInterval) clearInterval(timerInterval);
 
     timerInterval = setInterval(() => {
       secondsRemaining--;
       updateTimerDisplay(secondsRemaining);
 
-      // Atualizar store também durante ticking local
+      // Update global store during local ticking
       if (globalThis.timerStore) {
         globalThis.timerStore.tick();
       }
@@ -326,7 +325,7 @@
     oscillator.stop(audioContext.currentTime + 0.5);
   }
 
-  // Inicializar: buscar sessão ativa, atualizar display e ligar handlers da modal
+  // Init: fetch active session, update display and bind modal handlers
   window.addEventListener("load", async () => {
     // Only init if this module was loaded on the focused timer page
     if (!document.getElementById("timer-display")) return;
@@ -334,7 +333,7 @@
     await fetchActiveSessionAndInit();
     updateTimerDisplay(secondsRemaining);
 
-    // Link modal buttons
+    // Modal button handlers
     const confirmBtn = document.getElementById("skip-confirm-btn");
     const cancelBtn = document.getElementById("skip-cancel-btn");
 
@@ -380,7 +379,7 @@
             if (!completeRes.ok) throw new Error('Falha ao pular sessão');
           } else {
             // nothing to complete: just log and continue
-            console.warn('Nenhuma sessão ativa/pausada encontrada para pular');
+            console.warn('No active/paused session found to skip');
           }
 
           // cleanup local timer and reload to reflect server state
@@ -405,12 +404,12 @@
     }
 
     // ========== STORE LISTENER ==========
-    // Sincronizar página do timer com mudanças na store global (vindas de cards ou SSE)
+    // Sync timer page with global store updates (from cards or SSE)
     if (globalThis.timerStore) {
       globalThis.timerStore.subscribe((storeState) => {
-        // Se a tarefa desta página está na store e está ativa
+        // If this page's task is active in the store
         if (storeState.taskId === taskId) {
-          // Sincronizar segundos restantes
+          // Sync remaining seconds
           secondsRemaining = storeState.remaining || 0;
           updateTimerDisplay(secondsRemaining);
 
