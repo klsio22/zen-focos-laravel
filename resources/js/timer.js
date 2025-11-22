@@ -290,12 +290,101 @@
         oscillator.stop(audioContext.currentTime + 0.5);
     }
 
+    // Show complete modal and perform completion when confirmed
+    globalThis.__completeTaskId = null;
+
+    function showCompleteModal(taskIdParam) {
+        globalThis.__completeTaskId = Number(taskIdParam);
+        const modal = document.getElementById('complete-modal');
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    function hideCompleteModal() {
+        const modal = document.getElementById('complete-modal');
+        if (modal) modal.classList.add('hidden');
+        globalThis.__completeTaskId = null;
+    }
+
+    async function performCompleteForTask(taskIdParam) {
+        const taskIdNum = Number(taskIdParam);
+        const home = window.__homeUrl || '/tasks';
+        try {
+            const res = await fetch('/active-session', {
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    Accept: 'application/json',
+                },
+            });
+
+            if (!res.ok) throw new Error('Falha ao recuperar sessão ativa');
+            const data = await res.json();
+            const current = data.active || null;
+            let sessionToComplete = null;
+            if (current && Number(current.task_id) === taskIdNum) sessionToComplete = current;
+            else if (Array.isArray(data.paused) && data.paused.length) {
+                const pausedForThis = data.paused.find((p) => Number(p.task_id) === taskIdNum);
+                if (pausedForThis) sessionToComplete = pausedForThis;
+            }
+
+            if (sessionToComplete?.id) {
+                const completeRes = await fetch(`/sessions/${sessionToComplete.id}/complete`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                    },
+                });
+                if (!completeRes.ok) throw new Error('Falha ao completar sessão');
+            } else {
+                const title = document.querySelector('h1')?.textContent?.trim() || '';
+                const estimated = (window.__timerConfig && window.__timerConfig.estimatedPomodoros) || 1;
+                const completedNow = ((window.__timerConfig && window.__timerConfig.completedPomodoros) || 0) + 1;
+                const newStatus = completedNow >= estimated && estimated > 0 ? 'completed' : 'pending';
+
+                const taskRes = await fetch(`/tasks/${taskIdNum}`, {
+                    method: 'PUT',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                    },
+                    body: JSON.stringify({
+                        status: newStatus,
+                        title: title,
+                        description: '',
+                        estimated_pomodoros: estimated,
+                        completed_pomodoros: completedNow,
+                    }),
+                });
+
+                if (!taskRes.ok) throw new Error('Falha ao atualizar tarefa');
+            }
+
+            // Success: hide modal and redirect home
+            hideCompleteModal();
+            window.location.href = home;
+        } catch (err) {
+            console.error('performCompleteForTask error:', err);
+            // show error message inside modal
+            const msg = document.getElementById('complete-modal-message');
+            if (msg) msg.textContent = 'Erro ao concluir tarefa: ' + (err.message || err);
+        }
+    }
+
+    // Exposed function: opens the confirmation modal
+    globalThis.forceCompleteTask = function (taskIdParam) {
+        showCompleteModal(taskIdParam);
+    };
+
     window.addEventListener("load", async () => {
         if (!document.getElementById("timer-display")) return;
         await fetchActiveSessionAndInit();
         updateTimerDisplay(secondsRemaining);
         const confirmBtn = document.getElementById("skip-confirm-btn");
         const cancelBtn = document.getElementById("skip-cancel-btn");
+        const completeConfirmBtn = document.getElementById('complete-confirm-btn');
+        const completeCancelBtn = document.getElementById('complete-cancel-btn');
         if (confirmBtn) {
             confirmBtn.addEventListener("click", async () => {
                 try {
@@ -380,6 +469,19 @@
         }
         if (cancelBtn)
             cancelBtn.addEventListener("click", () => hideSkipModal());
+
+        if (completeCancelBtn) completeCancelBtn.addEventListener('click', () => {
+            const msg = document.getElementById('complete-modal-message');
+            if (msg) msg.textContent = 'Deseja realmente concluir esta tarefa?';
+            hideCompleteModal();
+        });
+
+        if (completeConfirmBtn) completeConfirmBtn.addEventListener('click', async () => {
+            completeConfirmBtn.disabled = true;
+            const taskIdToComplete = globalThis.__completeTaskId || taskId;
+            await performCompleteForTask(taskIdToComplete);
+            completeConfirmBtn.disabled = false;
+        });
 
         if (globalThis.timerStore) {
             globalThis.timerStore.subscribe((storeState) => {

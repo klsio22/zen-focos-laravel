@@ -97,6 +97,17 @@
                         <span>Pular</span>
                     </button>
                 @endif
+
+                @if($isLastSession)
+                    <button
+                        type="button"
+                        onclick="forceCompleteTask({{ $task->id }})"
+                        class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-semibold transition-colors shadow-lg flex items-center gap-2"
+                    >
+                        <x-heroicon-o-check class="w-5 h-5" />
+                        <span>Concluir</span>
+                    </button>
+                @endif
             </div>
 
             <!-- Back Button -->
@@ -126,6 +137,22 @@
     </div>
 </div>
 
+<!-- Complete Confirmation Modal -->
+<div id="complete-modal" class="fixed inset-0 z-50 hidden bg-black/50">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-slate-900 mb-2">Concluir Tarefa</h3>
+                <p id="complete-modal-message" class="text-slate-600 mb-4">Deseja realmente concluir esta tarefa?</p>
+                <div class="flex justify-end gap-3">
+                    <button id="complete-cancel-btn" class="px-4 py-2 rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200">Cancelar</button>
+                    <button id="complete-confirm-btn" class="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">Sim, concluir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
     <script>
         // Timer config is passed to the module; note: the heavy logic lives in resources/js/timer.js
         window.__timerConfig = {
@@ -133,6 +160,9 @@
             estimatedPomodoros: {{ $task->estimated_pomodoros }},
             completedPomodoros: {{ $task->completed_pomodoros }}
         };
+
+        // Home URL for redirect after completion
+        window.__homeUrl = '{{ route('tasks.index') }}';
     </script>
 
     @vite(['resources/js/timer-store.js', 'resources/js/timer.js'])
