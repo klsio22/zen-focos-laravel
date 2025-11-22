@@ -81,17 +81,7 @@
                     <x-heroicon-o-rocket-launch class="inline w-5 h-5 mr-2" /> Entrar
                 </button>
 
-                <!-- Link Recuperar Senha -->
-                @if (Route::has('password.request'))
-                    <div class="text-center mb-4">
-                        <a
-                            class="text-blue-600 hover:text-blue-800 font-medium text-sm"
-                            href="{{ route('password.request') }}"
-                        >
-                            Esqueceu a senha?
-                        </a>
-                    </div>
-                @endif
+                <!-- Link Recuperar Senha desativado -->
 
                 <!-- Divider -->
                 <div class="relative mb-4">
