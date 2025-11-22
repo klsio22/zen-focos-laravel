@@ -20,9 +20,9 @@ if (!globalThis.__taskCardTimerInit) {
     }
 
     async function updateStoreFromServer() {
-        if (!window.timerStore) return;
+        if (!globalThis.timerStore) return;
         const data = await fetchActiveSession();
-        window.timerStore.set(data);
+        globalThis.timerStore.set(data);
     }
 
     function updateCardTimerDisplay(cardEl, secondsRemaining, duration) {

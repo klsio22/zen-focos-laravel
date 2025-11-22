@@ -98,11 +98,19 @@
     <!-- Action Buttons -->
     <div class="p-4 flex flex-col gap-2">
         @if ($displayStatus !== 'completed')
-            <a href="{{ route('tasks.timer', $task) }}"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
-                <x-heroicon-o-play class="w-5 h-5" />
-                <span>Ver Pomodoro</span>
-            </a>
+            <div class="flex flex-col gap-2">
+                <button type="button" onclick="(function(btn){ const cb = btn.closest('.task-card').querySelector('input[type=checkbox]'); if(cb){ cb.checked = true; updateTaskStatus({{ $task->id }}, true, { target: cb }); } })(this)"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                    <x-heroicon-o-check class="w-5 h-5" />
+                    <span>Concluir</span>
+                </button>
+
+                <a href="{{ route('tasks.timer', $task) }}"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                    <x-heroicon-o-play class="w-5 h-5" />
+                    <span>Ver Pomodoro</span>
+                </a>
+            </div>
         @endif
 
         <div class="grid grid-cols-2 gap-2">

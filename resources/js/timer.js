@@ -335,8 +335,35 @@
                                 },
                             }
                         );
-                        if (!completeRes.ok)
-                            throw new Error("Falha ao pular sessão");
+                        if (!completeRes.ok) throw new Error("Falha ao pular sessão");
+                    } else {
+                        // No active/paused session: increment completed_pomodoros on task
+                        try {
+                            const title = document.querySelector('h1')?.textContent?.trim() || '';
+                            const estimated = (window.__timerConfig && window.__timerConfig.estimatedPomodoros) || 1;
+                            const completedNow = ((window.__timerConfig && window.__timerConfig.completedPomodoros) || 0) + 1;
+                            const newStatus = completedNow >= estimated && estimated > 0 ? 'completed' : 'pending';
+
+                            const taskRes = await fetch(`/tasks/${taskId}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Content-Type': 'application/json',
+                                    Accept: 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    status: newStatus,
+                                    title: title,
+                                    description: '',
+                                    estimated_pomodoros: estimated,
+                                    completed_pomodoros: completedNow,
+                                }),
+                            });
+
+                            if (!taskRes.ok) throw new Error('Falha ao atualizar tarefa');
+                        } catch (err) {
+                            console.error('skip fallback update error:', err);
+                        }
                     }
                     clearInterval(timerInterval);
                     isRunning = false;
