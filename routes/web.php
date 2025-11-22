@@ -13,9 +13,6 @@ Route::get('/', function () {
     return view('welcome');
 })->name('welcome');
 
-// Registrar rotas de autenticação exceto o fluxo de reset de senha
-Auth::routes(['reset' => false]);
-
 Route::middleware(['auth'])->group(function () {
     Route::get('/home', [TaskController::class, 'index'])->name('home');
 
