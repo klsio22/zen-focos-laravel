@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+
+
+/* ============================================
+   ZenFocos - Tailwind CSS v4 Styles
+   ============================================ */
+
+/* Variáveis e customizações globais */
+@layer base {
+    /* Smooth scroll behavior */
+    html {
+        @apply scroll-smooth;
+    }
+
+    /* Remove default button styles */
+    button {
+        @apply m-0 p-0 border-0 bg-transparent;
+    }
+
+    /* Focus states for accessibility */
+    *:focus-visible {
+        @apply outline-2 outline-offset-2 outline-blue-600;
+    }
+}
+
+/* Componentes customizados */
+@layer components {
+    /* Task Card */
+    .task-card {
+        @apply transition-all duration-300;
+    }
+
+    .task-card:hover {
+        @apply shadow-xl scale-105;
+    }
+
+    /* Timer Display */
+    .timer-display {
+        @apply font-mono text-6xl font-bold text-slate-900;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors;
+    }
+
+    .btn-primary:disabled {
+        @apply bg-slate-400 cursor-not-allowed;
+    }
+
+    .btn-secondary {
+        @apply bg-slate-500 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors;
+    }
+
+    .btn-danger {
+        @apply bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors;
+    }
+
+    .btn-success {
+        @apply bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors;
+    }
+
+    /* Status Badges */
+    .badge-pending {
+        @apply bg-slate-200 text-slate-800;
+    }
+
+    .badge-in-progress {
+        @apply bg-amber-200 text-amber-800;
+    }
+
+    .badge-completed {
+        @apply bg-green-200 text-green-800;
+    }
+
+    /* Progress Bar */
+    .progress-bar {
+        @apply w-full bg-slate-300 rounded-full h-2 overflow-hidden;
+    }
+
+    .progress-fill {
+        @apply bg-green-500 h-full transition-all duration-300;
+    }
+
+    /* Input Focus */
+    input:focus,
+    textarea:focus,
+    select:focus {
+        @apply ring-2 ring-blue-600 ring-offset-0;
+    }
+
+    /* Modal Animations */
+    @keyframes slideIn {
+        from {
+            @apply translate-y-10 opacity-0;
+        }
+        to {
+            @apply translate-y-0 opacity-100;
+        }
+    }
+
+    .modal-enter {
+        animation: slideIn 0.3s ease-out;
+    }
+}
+
+/* Utilities customizadas */
+@layer utilities {
+    /* Line clamp alternativas */
+    .line-clamp-3 {
+        @apply line-clamp-3;
+    }
+
+    /* Flex center */
+    .flex-center {
+        @apply flex items-center justify-center;
+    }
+
+    /* Grid center */
+    .grid-center {
+        @apply grid place-items-center;
+    }
+
+    /* Safe area para mobile */
+    .safe-area {
+        @apply pb-safe pr-safe pl-safe;
+    }
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+    .hide-mobile {
+        @apply hidden;
+    }
+}
+
+@media (min-width: 769px) {
+    .show-mobile {
+        @apply hidden;
+    }
+}
