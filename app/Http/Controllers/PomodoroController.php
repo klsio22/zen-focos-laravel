@@ -9,26 +9,22 @@ use Illuminate\Support\Facades\Auth;
 
 class PomodoroController extends Controller
 {
-    // Rotas protegidas aplicam o middleware auth; removido construtor para compatibilidade com Laravel 12
-
     public function startSession(Task $task)
     {
         $this->authorize('view', $task);
 
-        // Encerrar sessão ativa anterior
         PomodoroSession::where('user_id', Auth::id())
             ->where('status', 'active')
             ->update(['status' => 'cancelled']);
 
-        // Criar nova sessão
         $session = PomodoroSession::create([
             'user_id' => Auth::id(),
             'task_id' => $task->id,
-            'duration' => 25, // 25 minutos padrão
+            'duration' => 25,
             'start_time' => now(),
             'status' => 'active',
             'is_paused' => false,
-            'remaining_seconds' => null
+            'remaining_seconds' => null,
         ]);
 
         return response()->json([
@@ -45,28 +41,28 @@ class PomodoroController extends Controller
             'end_time' => now(),
             'status' => 'completed',
             'is_paused' => false,
-            'remaining_seconds' => null
+            'remaining_seconds' => null,
         ]);
 
-        // Atualizar contador de pomodoros da task
         $session->task->increment('completed_pomodoros');
 
         return response()->json([
             'message' => 'Pomodoro completado!',
-            'completed_pomodoros' => $session->task->completed_pomodoros
+            'completed_pomodoros' => $session->task->completed_pomodoros,
         ]);
     }
 
-    /**
-     * Cancel an active session without incrementing the task counter.
-     */
     public function cancelSession(PomodoroSession $session)
     {
         $this->authorize('update', $session);
 
-        // Only allow cancelling active sessions
         if ($session->status === 'active' || $session->is_paused) {
-            $session->update(['status' => 'cancelled', 'end_time' => now(), 'is_paused' => false, 'remaining_seconds' => null]);
+            $session->update([
+                'status' => 'cancelled',
+                'end_time' => now(),
+                'is_paused' => false,
+                'remaining_seconds' => null,
+            ]);
         }
 
         return response()->json(['message' => 'Sessão cancelada']);
@@ -79,7 +75,6 @@ class PomodoroController extends Controller
             ->where('is_paused', false)
             ->first();
 
-        // return paused sessions separately so frontend can show them per-card
         $paused = PomodoroSession::where('user_id', Auth::id())
             ->where('is_paused', true)
             ->get();
@@ -87,9 +82,6 @@ class PomodoroController extends Controller
         return response()->json(['active' => $active, 'paused' => $paused]);
     }
 
-    /**
-     * Pause a session and persist remaining seconds.
-     */
     public function pauseSession(Request $request, PomodoroSession $session)
     {
         $this->authorize('update', $session);
@@ -108,9 +100,6 @@ class PomodoroController extends Controller
         return response()->json(['message' => 'Sessão pausada', 'session' => $session]);
     }
 
-    /**
-     * Resume a paused session. We mark it active and set start_time to now; frontend will recompute remaining.
-     */
     public function resumeSession(Request $request, PomodoroSession $session)
     {
         $this->authorize('update', $session);
@@ -121,7 +110,6 @@ class PomodoroController extends Controller
 
         $remaining = $session->remaining_seconds ?? $request->input('remaining_seconds');
 
-        // Reactivate session and reset timestamps; backend will treat it as active and the frontend will use remaining_seconds
         $session->update([
             'is_paused' => false,
             'status' => 'active',
