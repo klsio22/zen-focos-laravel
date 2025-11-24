@@ -1,521 +1,798 @@
-# 🎯 Base do Projeto Laravel - ZenFocos
+# 📘 PROJECT MODEL - ZenFocos (Pomodoro Task Manager)
 
-## 📋 **Estrutura Base Simplificada**
+> **Documentação Técnica Completa do Sistema**  
+> Versão: 1.0 | Laravel 12 + Blade Templates + JavaScript Vanilla
 
-### **1. Configuração Inicial**
+---
 
-```bash
-# Criar novo projeto Laravel
-composer create-project laravel/laravel zenfocos
-cd zenfocos
+## 📋 **Índice**
 
-# Instalar dependências extras
-composer require laravel/ui
-php artisan ui bootstrap --auth
-npm install && npm run dev
-```
+1. [Visão Geral do Sistema](#visão-geral-do-sistema)
+2. [Arquitetura e Estrutura de Pastas](#arquitetura-e-estrutura-de-pastas)
+3. [Modelos de Dados e Relacionamentos](#modelos-de-dados-e-relacionamentos)
+4. [Regras de Negócio](#regras-de-negócio)
+5. [Controllers e Endpoints](#controllers-e-endpoints)
+6. [Autorizações e Políticas](#autorizações-e-políticas)
+7. [Frontend e Integração](#frontend-e-integração)
+8. [Configuração e Dependências](#configuração-e-dependências)
 
-### **2. Estrutura de Pastas Base**
+---
+
+## 🎯 **Visão Geral do Sistema**
+
+### **Propósito**
+Sistema web para gerenciamento de tarefas usando a técnica Pomodoro, permitindo:
+- Criar e organizar tarefas
+- Executar sessões Pomodoro (25 minutos de foco)
+- Pausar/retomar sessões
+- Acompanhar progresso (pomodoros completados vs estimados)
+- Visualização em tempo real do timer
+
+### **Stack Tecnológica**
+- **Backend:** Laravel 12
+- **Frontend:** Blade Templates + JavaScript Vanilla
+- **CSS:** Tailwind CSS v4 + Blade UI Kit (Heroicons)
+- **Build Tool:** Vite
+- **Real-time:** Polling (consulta `/active-session` a cada 5 segundos)
+
+---
+
+## 🏗️ **Arquitetura e Estrutura de Pastas**
+
+### **Backend (Laravel)**
 
 ```
 app/
 ├── Http/
 │   ├── Controllers/
-│   │   ├── TaskController.php
-│   │   ├── PomodoroController.php
-│   │   └── AuthController.php
+│   │   ├── TaskController.php          # CRUD de tarefas
+│   │   ├── PomodoroController.php      # Gerenciamento de sessões Pomodoro
+│   │   └── Auth/                       # Controllers de autenticação (Laravel UI)
 │   └── Middleware/
 ├── Models/
-│   ├── User.php
-│   ├── Task.php
-│   └── PomodoroSession.php
-├── Providers/
-resources/
-├── views/
-│   ├── layouts/
-│   ├── tasks/
-│   └── auth/
+│   ├── User.php                        # Modelo de usuário (Laravel padrão)
+│   ├── Task.php                        # Modelo de tarefa
+│   └── PomodoroSession.php             # Modelo de sessão Pomodoro
+├── Policies/
+│   ├── TaskPolicy.php                  # Autorização de acesso a tarefas
+│   └── PomodoroSessionPolicy.php       # Autorização de sessões
+└── Providers/
+    └── AppServiceProvider.php          # Registro de policies
+
 database/
 ├── migrations/
-├── seeders/
+│   ├── 0001_01_01_000000_create_users_table.php
+│   ├── 2024_01_01_000001_create_tasks_table.php
+│   ├── 2024_01_01_000002_create_pomodoro_sessions_table.php
+│   └── 2025_11_15_000000_add_pause_fields_to_pomodoro_sessions.php
+└── seeders/
+    └── DatabaseSeeder.php
+
 routes/
-├── web.php
-├── api.php
+├── web.php                             # Rotas autenticadas + públicas
+└── console.php
 ```
 
-## 🗄️ **Migrações do Banco de Dados**
+### **Frontend (Blade + JavaScript)**
 
-### **Migration: Create Tasks Table**
+```
+resources/
+├── js/
+│   ├── app.js                          # Entry point JavaScript (Vite)
+│   ├── bootstrap.js                    # Configurações iniciais
+│   ├── timer-store.js                  # Store global do timer (polling)
+│   ├── timer.js                        # Lógica do timer focado
+│   └── task-cards.js                   # Lógica dos cards (sincronização)
+├── views/ (Blade Templates)
+│   ├── welcome.blade.php               # Página inicial pública
+│   ├── home.blade.php                  # Dashboard autenticado
+│   ├── layouts/
+│   │   └── app.blade.php               # Layout base com sidebar
+│   ├── partials/
+│   │   └── header.blade.php            # Header reutilizável
+│   ├── auth/
+│   │   ├── login.blade.php             # Login (Laravel UI)
+│   │   └── register.blade.php          # Registro (Laravel UI)
+│   ├── tasks/
+│   │   ├── index.blade.php             # Lista de tarefas agrupadas
+│   │   ├── create.blade.php            # Form criar tarefa
+│   │   ├── edit.blade.php              # Form editar tarefa
+│   │   └── components/
+│   │       └── task-card.blade.php     # Card reutilizável de tarefa
+│   └── timer/
+│       └── focused.blade.php           # Timer Pomodoro circular
+└── css/
+    └── app.css                         # Tailwind v4
+```
+
+---
+
+## 🗄️ **Modelos de Dados e Relacionamentos**
+
+### **1. User (Usuário)**
 
 ```php
-<?php
-// database/migrations/2024_01_01_create_tasks_table.php
-public function up()
+// Model: app/Models/User.php (Laravel padrão + Laravel UI)
+// Migration: 0001_01_01_000000_create_users_table.php
+
+Schema:
+- id: bigint (PK)
+- name: string
+- email: string (unique)
+- password: string (hash)
+- remember_token: string
+- timestamps
+
+Relacionamentos:
+- hasMany(Task::class)            // Um usuário tem muitas tarefas
+- hasMany(PomodoroSession::class) // Um usuário tem muitas sessões
+```
+
+### **2. Task (Tarefa)**
+
+```php
+// Model: app/Models/Task.php
+// Migration: 2024_01_01_000001_create_tasks_table.php
+
+Schema:
+- id: bigint (PK)
+- user_id: bigint (FK → users.id, cascade delete)
+- title: string (obrigatório)
+- description: text (nullable)
+- status: enum('pending', 'in_progress', 'completed') default 'pending'
+- estimated_pomodoros: integer default 1
+- completed_pomodoros: integer default 0
+- timestamps
+
+Relacionamentos:
+- belongsTo(User::class)                    // Tarefa pertence a um usuário
+- hasMany(PomodoroSession::class)           // Tarefa tem muitas sessões Pomodoro
+
+Fillable:
+['user_id', 'title', 'description', 'status', 'estimated_pomodoros', 'completed_pomodoros']
+```
+
+### **3. PomodoroSession (Sessão Pomodoro)**
+
+```php
+// Model: app/Models/PomodoroSession.php
+// Migrations:
+//   - 2024_01_01_000002_create_pomodoro_sessions_table.php
+//   - 2025_11_15_000000_add_pause_fields_to_pomodoro_sessions.php
+
+Schema:
+- id: bigint (PK)
+- user_id: bigint (FK → users.id, cascade delete)
+- task_id: bigint (FK → tasks.id, cascade delete)
+- duration: integer default 25 (minutos)
+- start_time: timestamp
+- end_time: timestamp (nullable)
+- status: enum('active', 'completed', 'cancelled') default 'active'
+- is_paused: boolean default false             // Adicionado em 2025
+- remaining_seconds: integer (nullable)        // Adicionado em 2025
+- timestamps
+
+Relacionamentos:
+- belongsTo(User::class)       // Sessão pertence a um usuário
+- belongsTo(Task::class)       // Sessão pertence a uma tarefa
+
+Fillable:
+['user_id', 'task_id', 'duration', 'start_time', 'end_time', 'status', 'is_paused', 'remaining_seconds']
+
+Casts:
+- start_time → datetime
+- end_time → datetime
+```
+
+### **Diagrama de Relacionamentos**
+
+```
+┌─────────────┐
+│    User     │
+│  (users)    │
+└──────┬──────┘
+       │
+       │ 1:N
+       ├──────────────┐
+       │              │
+       ▼              ▼
+┌─────────────┐ ┌──────────────────┐
+│    Task     │ │ PomodoroSession  │
+│  (tasks)    │ │ (pomodoro_       │
+│             │ │  sessions)       │
+└──────┬──────┘ └──────────────────┘
+       │              ▲
+       │ 1:N          │
+       └──────────────┘
+```
+
+---
+
+## ⚙️ **Regras de Negócio**
+
+### **1. Gestão de Tarefas**
+
+#### **Criação de Tarefa**
+- **Campos obrigatórios:**
+  - `title` (máx 255 caracteres)
+  - `estimated_pomodoros` (inteiro ≥ 1)
+- **Campos opcionais:**
+  - `description` (texto longo)
+- **Defaults:**
+  - `status = 'pending'`
+  - `completed_pomodoros = 0`
+  - `user_id = Auth::id()` (usuário logado)
+
+#### **Atualização de Tarefa**
+- **Validações:**
+  - `title`: required, string, max:255
+  - `description`: nullable, string
+  - `status`: required, in:['pending', 'in_progress', 'completed']
+  - `estimated_pomodoros`: required, integer, min:1
+  - `completed_pomodoros`: nullable, integer, min:0
+
+- **Regra especial:** Se `completed_pomodoros >= estimated_pomodoros`, status deve ser `'completed'`
+- **Autorização:** Apenas o dono da tarefa pode atualizar (via `TaskPolicy`)
+
+#### **Exclusão de Tarefa**
+- **Cascade delete:** Ao deletar uma tarefa, todas as sessões Pomodoro associadas são deletadas automaticamente (constraint FK)
+- **Autorização:** Apenas o dono pode deletar
+
+#### **Agrupamento por Status (Frontend)**
+Na view `tasks/index.blade.php`, tarefas são agrupadas em:
+1. **Pendentes** (`status = 'pending'` E `completed_pomodoros < estimated_pomodoros`)
+2. **Em Progresso** (`status = 'in_progress'` E `completed_pomodoros < estimated_pomodoros`)
+3. **Concluídas** (`status = 'completed'` OU `completed_pomodoros >= estimated_pomodoros`)
+
+---
+
+### **2. Sessões Pomodoro**
+
+#### **Iniciar Sessão (`POST /tasks/{task}/start-session`)**
+**Fluxo:**
+1. Cancelar qualquer sessão ativa anterior do usuário:
+   ```php
+   PomodoroSession::where('user_id', Auth::id())
+       ->where('status', 'active')
+       ->update(['status' => 'cancelled']);
+   ```
+
+2. Criar nova sessão:
+   - `user_id = Auth::id()`
+   - `task_id = {task->id}`
+   - `duration = 25` minutos (fixo)
+   - `start_time = now()`
+   - `status = 'active'`
+   - `is_paused = false`
+   - `remaining_seconds = null`
+
+3. Retornar JSON com sessão criada
+
+**Autorização:** Usuário deve ser dono da tarefa (`TaskPolicy::view`)
+
+---
+
+#### **Pausar Sessão (`POST /sessions/{session}/pause`)**
+**Validações:**
+- Sessão deve estar `status = 'active'`
+- Usuário deve ser dono da sessão (`PomodoroSessionPolicy::update`)
+
+**Ação:**
+```php
+$session->update([
+    'is_paused' => true,
+    'remaining_seconds' => (int) $request->input('remaining_seconds')
+]);
+```
+
+**Frontend:** Envia `remaining_seconds` calculado pelo JavaScript local
+
+---
+
+#### **Retomar Sessão (`POST /sessions/{session}/resume`)**
+**Validações:**
+- Sessão deve estar `is_paused = true`
+- Usuário deve ser dono
+
+**Ação:**
+```php
+$session->update([
+    'is_paused' => false,
+    'status' => 'active',
+    'start_time' => now(),
+    'remaining_seconds' => (int) $remaining_seconds_from_request
+]);
+```
+
+**Frontend:** Recalcula o tempo restante baseado em `remaining_seconds`
+
+---
+
+#### **Completar Sessão (`POST /sessions/{session}/complete`)**
+**Ação:**
+1. Atualizar sessão:
+   ```php
+   $session->update([
+       'end_time' => now(),
+       'status' => 'completed',
+       'is_paused' => false,
+       'remaining_seconds' => null
+   ]);
+   ```
+
+2. **Incrementar contador da tarefa:**
+   ```php
+   $session->task->increment('completed_pomodoros');
+   ```
+
+3. Retornar `completed_pomodoros` atualizado no JSON
+
+**Autorização:** Usuário deve ser dono da sessão
+
+---
+
+#### **Cancelar Sessão (`POST /sessions/{session}/cancel`)**
+**Ação:**
+```php
+$session->update([
+    'status' => 'cancelled',
+    'end_time' => now(),
+    'is_paused' => false,
+    'remaining_seconds' => null
+]);
+```
+
+**Importante:** NÃO incrementa `completed_pomodoros`
+
+---
+
+#### **Buscar Sessão Ativa (`GET /active-session`)**
+**Retorno JSON:**
+```json
 {
-    Schema::create('tasks', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('user_id')->constrained()->onDelete('cascade');
-        $table->string('title');
-        $table->text('description')->nullable();
-        $table->enum('status', ['pending', 'in_progress', 'completed'])->default('pending');
-        $table->integer('estimated_pomodoros')->default(1);
-        $table->integer('completed_pomodoros')->default(0);
-        $table->timestamps();
-    });
+  "active": { /* PomodoroSession ativa e não pausada */ },
+  "paused": [ /* Array de sessões pausadas do usuário */ ]
 }
 ```
 
-### **Migration: Create Pomodoro Sessions Table**
+**Lógica:**
+- `active`: sessão com `status = 'active'` E `is_paused = false`
+- `paused`: todas as sessões com `is_paused = true`
 
+**Uso:** Frontend consulta este endpoint para sincronizar estado do timer
+
+---
+
+### **3. Sincronização Frontend ↔ Backend**
+
+#### **Estratégia Híbrida**
+1. **Polling (atual):** JavaScript consulta `/active-session` a cada 5 segundos
+2. **SSE (planejado):** EventSource em `/timer/stream` para push em tempo real
+
+#### **Store Global (JavaScript Legado)**
+- **Arquivo:** `resources/js/timer-store.js`
+- **Escopo:** `globalThis.timerStore`
+- **Métodos:**
+  - `get()`: retorna estado atual
+  - `set(payload)`: atualiza com dados do backend (`{active, paused}`)
+  - `tick()`: decrementa 1 segundo (usado no timer focado)
+  - `subscribe(callback)`: registra listener para mudanças
+  - `getPausedTimeForTask(taskId)`: retorna tempo restante de sessão pausada
+  - `setPaused(taskId, remainingSeconds)`: marca sessão como pausada no store
+
+#### **Timer Focado**
+- **Arquivo:** `resources/js/timer.js`
+- **Funções principais:**
+  - `toggleTimer(taskId)`: play/pause local
+  - `pauseSession()`: chama `POST /sessions/{id}/pause` e para ticking local
+  - `resumePausedSession(sessionId)`: chama `POST /sessions/{id}/resume`
+  - `completePomodoro(taskId)`: chama `POST /sessions/{id}/complete`
+  - `skipPomodoro(taskId)`: modal de confirmação → chama complete sem esperar timer zerar
+  - `finishTask(taskId)`: marca tarefa como concluída (`PUT /tasks/{id}`)
+
+#### **Sincronização de Cards**
+- **Arquivo:** `resources/js/task-cards.js`
+- **Lógica:**
+  - Cards com preview do timer atualizam via `timerStore`
+  - A cada atualização da store (`timer-store-updated` event), cards recalculam display
+
+---
+
+## 🚀 **Controllers e Endpoints**
+
+### **TaskController**
+
+| Método | Rota | Ação | Retorno |
+|--------|------|------|---------|
+| `GET` | `/home` | `index()` | View com lista de tarefas do usuário |
+| `GET` | `/tasks/create` | `create()` | View do formulário de criação |
+| `POST` | `/tasks` | `store(Request)` | Cria tarefa → Redirect `/tasks` |
+| `GET` | `/tasks/{task}` | `show(Task)` | View de detalhes (não usada atualmente) |
+| `GET` | `/tasks/{task}/edit` | `edit(Task)` | View do formulário de edição |
+| `PUT/PATCH` | `/tasks/{task}` | `update(Request, Task)` | Atualiza tarefa → JSON ou Redirect |
+| `DELETE` | `/tasks/{task}` | `destroy(Task)` | Deleta tarefa → Redirect `/tasks` |
+| `GET` | `/tasks/{task}/timer` | `showTimer(Task)` | View do timer focado Pomodoro |
+
+**Validações (`store` e `update`):**
 ```php
-<?php
-// database/migrations/2024_01_01_create_pomodoro_sessions_table.php
-public function up()
-{
-    Schema::create('pomodoro_sessions', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('user_id')->constrained()->onDelete('cascade');
-        $table->foreignId('task_id')->constrained()->onDelete('cascade');
-        $table->integer('duration')->default(25); // minutos
-        $table->timestamp('start_time');
-        $table->timestamp('end_time')->nullable();
-        $table->enum('status', ['active', 'completed', 'cancelled'])->default('active');
-        $table->timestamps();
-    });
-}
+[
+    'title' => 'required|string|max:255',
+    'description' => 'nullable|string',
+    'status' => 'required|in:pending,in_progress,completed',
+    'estimated_pomodoros' => 'required|integer|min:1',
+    'completed_pomodoros' => 'nullable|integer|min:0'
+]
 ```
 
-## 🎨 **Models Base**
+**Autorização:**
+- `show`, `edit`, `update`, `destroy`: requerem `TaskPolicy::view/update/delete`
 
-### **Model: Task**
+---
 
+### **PomodoroController**
+
+| Método | Rota | Ação | Retorno |
+|--------|------|------|---------|
+| `POST` | `/tasks/{task}/start-session` | `startSession(Task)` | JSON com sessão criada |
+| `POST` | `/sessions/{session}/complete` | `completeSession(PomodoroSession)` | JSON com contador atualizado |
+| `POST` | `/sessions/{session}/cancel` | `cancelSession(PomodoroSession)` | JSON confirmação |
+| `POST` | `/sessions/{session}/pause` | `pauseSession(Request, PomodoroSession)` | JSON com sessão pausada |
+| `POST` | `/sessions/{session}/resume` | `resumeSession(Request, PomodoroSession)` | JSON com sessão retomada |
+| `GET` | `/active-session` | `getActiveSession()` | JSON `{active, paused}` |
+
+**Autorização:**
+- Todas as rotas verificam `PomodoroSessionPolicy::update` ou `TaskPolicy::view`
+
+---
+
+## 🔐 **Autorizações e Políticas**
+
+### **TaskPolicy**
 ```php
-<?php
-// app/Models/Task.php
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-
-class Task extends Model
-{
-    use HasFactory;
-
-    protected $fillable = [
-        'user_id',
-        'title', 
-        'description',
-        'status',
-        'estimated_pomodoros',
-        'completed_pomodoros'
-    ];
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function pomodoroSessions()
-    {
-        return $this->hasMany(PomodoroSession::class);
-    }
-}
-```
-
-### **Model: PomodoroSession**
-
-```php
-<?php
-// app/Models/PomodoroSession.php
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-
-class PomodoroSession extends Model
-{
-    use HasFactory;
-
-    protected $fillable = [
-        'user_id',
-        'task_id',
-        'duration',
-        'start_time',
-        'end_time',
-        'status'
-    ];
-
-    protected $casts = [
-        'start_time' => 'datetime',
-        'end_time' => 'datetime'
-    ];
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function task()
-    {
-        return $this->belongsTo(Task::class);
-    }
-}
-```
-
-## 🚀 **Controllers Base**
-
-### **Controller: TaskController**
-
-```php
-<?php
-// app/Http/Controllers/TaskController.php
-namespace App\Http\Controllers;
-
-use App\Models\Task;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-
-class TaskController extends Controller
-{
-    public function index()
-    {
-        $tasks = Task::where('user_id', Auth::id())->get();
-        return view('tasks.index', compact('tasks'));
-    }
-
-    public function create()
-    {
-        return view('tasks.create');
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'estimated_pomodoros' => 'required|integer|min:1'
-        ]);
-
-        Task::create(array_merge($validated, ['user_id' => Auth::id()]));
-
-        return redirect()->route('tasks.index')->with('success', 'Task criada com sucesso!');
-    }
-
-    public function show(Task $task)
-    {
-        $this->authorize('view', $task);
-        return view('tasks.show', compact('task'));
-    }
-
-    public function update(Request $request, Task $task)
-    {
-        $this->authorize('update', $task);
-        
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'status' => 'required|in:pending,in_progress,completed'
-        ]);
-
-        $task->update($validated);
-
-        return redirect()->route('tasks.index')->with('success', 'Task atualizada!');
-    }
-
-    public function destroy(Task $task)
-    {
-        $this->authorize('delete', $task);
-        $task->delete();
-        
-        return redirect()->route('tasks.index')->with('success', 'Task removida!');
-    }
-}
-```
-
-### **Controller: PomodoroController**
-
-```php
-<?php
-// app/Http/Controllers/PomodoroController.php
-namespace App\Http\Controllers;
-
-use App\Models\PomodoroSession;
-use App\Models\Task;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-
-class PomodoroController extends Controller
-{
-    public function startSession(Request $request, Task $task)
-    {
-        $this->authorize('view', $task);
-
-        // Encerrar sessão ativa anterior
-        PomodoroSession::where('user_id', Auth::id())
-                      ->where('status', 'active')
-                      ->update(['status' => 'cancelled']);
-
-        // Criar nova sessão
-        $session = PomodoroSession::create([
-            'user_id' => Auth::id(),
-            'task_id' => $task->id,
-            'duration' => 25, // 25 minutos padrão
-            'start_time' => now(),
-            'status' => 'active'
-        ]);
-
-        return response()->json([
-            'session' => $session,
-            'message' => 'Sessão Pomodoro iniciada!'
-        ]);
-    }
-
-    public function completeSession(PomodoroSession $session)
-    {
-        $this->authorize('update', $session);
-
-        $session->update([
-            'end_time' => now(),
-            'status' => 'completed'
-        ]);
-
-        // Atualizar contador de pomodoros da task
-        $session->task->increment('completed_pomodoros');
-
-        return response()->json([
-            'message' => 'Pomodoro completado!',
-            'completed_pomodoros' => $session->task->completed_pomodoros
-        ]);
-    }
-
-    public function getActiveSession()
-    {
-        $session = PomodoroSession::where('user_id', Auth::id())
-                                 ->where('status', 'active')
-                                 ->first();
-
-        return response()->json(['session' => $session]);
-    }
-}
-```
-
-## 🛣️ **Rotas Base**
-
-### **routes/web.php**
-
-```php
-<?php
-use App\Http\Controllers\TaskController;
-use App\Http\Controllers\PomodoroController;
-
-Auth::routes();
-
-Route::middleware(['auth'])->group(function () {
-    Route::get('/', [TaskController::class, 'index'])->name('home');
-    
-    // Tasks Routes
-    Route::resource('tasks', TaskController::class);
-    
-    // Pomodoro Routes
-    Route::post('/tasks/{task}/start-session', [PomodoroController::class, 'startSession'])->name('pomodoro.start');
-    Route::post('/sessions/{session}/complete', [PomodoroController::class, 'completeSession'])->name('pomodoro.complete');
-    Route::get('/active-session', [PomodoroController::class, 'getActiveSession'])->name('pomodoro.active');
-});
-```
-
-## 🎨 **Views Base com Blade**
-
-### **Layout Principal**
-
-```html
-<!-- resources/views/layouts/app.blade.php -->
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenFocos - @yield('title')</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-gray-50">
-    <nav class="bg-blue-600 text-white p-4">
-        <div class="container mx-auto flex justify-between items-center">
-            <a href="{{ route('home') }}" class="text-xl font-bold">ZenFocos</a>
-            <div class="flex items-center space-x-4">
-                <span>{{ Auth::user()->name }}</span>
-                <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="hover:text-blue-200">
-                    Sair
-                </a>
-                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
-                    @csrf
-                </form>
-            </div>
-        </div>
-    </nav>
-
-    <main class="container mx-auto py-8 px-4">
-        @yield('content')
-    </main>
-
-    @yield('scripts')
-</body>
-</html>
-```
-
-### **Lista de Tasks**
-
-```html
-<!-- resources/views/tasks/index.blade.php -->
-@extends('layouts.app')
-
-@section('title', 'Minhas Tasks')
-
-@section('content')
-<div class="max-w-4xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">Minhas Tasks</h1>
-        <a href="{{ route('tasks.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-            Nova Task
-        </a>
-    </div>
-
-    <div class="bg-white rounded-lg shadow-md p-6">
-        @if($tasks->count() > 0)
-            <div class="space-y-4">
-                @foreach($tasks as $task)
-                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <h3 class="text-lg font-semibold text-gray-800">{{ $task->title }}</h3>
-                            <p class="text-gray-600 mt-1">{{ $task->description }}</p>
-                            <div class="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                                <span>Estimado: {{ $task->estimated_pomodoros }} pomodoros</span>
-                                <span>Completado: {{ $task->completed_pomodoros }} pomodoros</span>
-                                <span class="px-2 py-1 rounded-full text-xs 
-                                    {{ $task->status === 'completed' ? 'bg-green-100 text-green-800' : 
-                                       ($task->status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
-                                    {{ ucfirst($task->status) }}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button onclick="startPomodoro({{ $task->id }})" 
-                                    class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
-                                🍅 Iniciar
-                            </button>
-                            <a href="{{ route('tasks.edit', $task) }}" class="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600">
-                                Editar
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                @endforeach
-            </div>
-        @else
-            <p class="text-gray-500 text-center py-8">Nenhuma task encontrada. Crie sua primeira task!</p>
-        @endif
-    </div>
-</div>
-
-@section('scripts')
-<script>
-function startPomodoro(taskId) {
-    fetch(`/tasks/${taskId}/start-session`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        alert('Pomodoro iniciado! 25 minutos de foco.');
-        // Aqui você pode implementar o timer
-    });
-}
-</script>
-@endsection
-```
-
-## 🔧 **Políticas de Acesso (Policies)**
-
-```php
-<?php
 // app/Policies/TaskPolicy.php
-namespace App\Policies;
 
-use App\Models\Task;
-use App\Models\User;
+public function view(User $user, Task $task) {
+    return $user->id === $task->user_id;
+}
 
-class TaskPolicy
-{
-    public function view(User $user, Task $task)
-    {
-        return $user->id === $task->user_id;
-    }
+public function update(User $user, Task $task) {
+    return $user->id === $task->user_id;
+}
 
-    public function update(User $user, Task $task)
-    {
-        return $user->id === $task->user_id;
-    }
-
-    public function delete(User $user, Task $task)
-    {
-        return $user->id === $task->user_id;
-    }
+public function delete(User $user, Task $task) {
+    return $user->id === $task->user_id;
 }
 ```
 
-## 📦 **Arquivos de Configuração**
+**Regra:** Usuário só pode ver/editar/deletar suas próprias tarefas.
 
-### **.env.example**
+---
 
-```env
-APP_NAME=ZenFocos
-APP_ENV=local
-APP_KEY=
-APP_DEBUG=true
-APP_URL=http://localhost:8000
+### **PomodoroSessionPolicy**
+```php
+// app/Policies/PomodoroSessionPolicy.php
 
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=zenfocos
-DB_USERNAME=root
-DB_PASSWORD=
-
-BROADCAST_DRIVER=log
-CACHE_DRIVER=file
-QUEUE_CONNECTION=sync
-SESSION_DRIVER=file
-SESSION_LIFETIME=120
+public function update(User $user, PomodoroSession $session) {
+    return $user->id === $session->user_id;
+}
 ```
 
-## 🚀 **Comandos para Executar**
+**Regra:** Usuário só pode pausar/retomar/completar/cancelar suas próprias sessões.
 
+---
+
+### **Registro de Policies**
+```php
+// app/Providers/AppServiceProvider.php
+
+use App\Models\Task;
+use App\Policies\TaskPolicy;
+use App\Models\PomodoroSession;
+use App\Policies\PomodoroSessionPolicy;
+use Illuminate\Support\Facades\Gate;
+
+public function boot(): void
+{
+    Gate::policy(Task::class, TaskPolicy::class);
+    Gate::policy(PomodoroSession::class, PomodoroSessionPolicy::class);
+}
+```
+
+---
+
+## 🎨 **Frontend e Integração**
+
+### **Arquitetura Frontend (Blade + JavaScript)**
+
+O projeto utiliza **Blade Templates** do Laravel para renderização server-side com **JavaScript vanilla** para interatividade.
+
+#### **Componentes Blade Principais**
+
+| Componente | Arquivo | Descrição |
+|------------|---------|-----------|
+| Layout Base | `layouts/app.blade.php` | Sidebar responsiva, navegação, logout |
+| Task List | `tasks/index.blade.php` | Lista agrupada por status (Pendente/Em Progresso/Concluída) |
+| Task Card | `tasks/components/task-card.blade.php` | Card reutilizável com checkbox, progresso, ações |
+| Task Form | `tasks/create.blade.php` / `tasks/edit.blade.php` | Formulários de CRUD |
+| Timer Focado | `timer/focused.blade.php` | Timer circular SVG com botões play/pause/skip |
+| Auth Views | `auth/login.blade.php` / `auth/register.blade.php` | Laravel UI authentication |
+
+#### **JavaScript Modules**
+
+**1. `timer-store.js` (Store Global)**
+```javascript
+// Gerencia estado compartilhado do timer
+globalThis.timerStore = {
+  get(),              // Retorna { active, paused }
+  set(payload),       // Atualiza com dados do backend
+  tick(),             // Decrementa 1 segundo
+  subscribe(fn),      // Listener para mudanças
+  getPausedTimeForTask(taskId),
+  setPaused(taskId, seconds)
+}
+```
+
+**2. `timer.js` (Timer Focado)**
+```javascript
+// Lógica do timer circular na página /tasks/{id}/timer
+toggleTimer(taskId)             // Play/pause
+pauseSession()                  // POST /sessions/{id}/pause
+resumePausedSession(sessionId)  // POST /sessions/{id}/resume
+completePomodoro(taskId)        // POST /sessions/{id}/complete
+skipPomodoro(taskId)            // Modal confirmação + complete
+forceCompleteTask(taskId)       // PUT /tasks/{id} (marcar concluído)
+```
+
+**3. `task-cards.js` (Sincronização Cards)**
+```javascript
+// Atualiza preview do timer nos cards da lista
+// Escuta evento 'timer-store-updated' do timerStore
+// Renderiza mini-timer com tempo restante
+```
+
+#### **Blade UI Kit (Heroicons)**
+```blade
+<!-- Ícones SVG via componentes Blade -->
+<x-heroicon-o-home class="w-5 h-5" />
+<x-heroicon-o-clipboard-document-list class="w-5 h-5" />
+<x-heroicon-o-play class="w-5 h-5" />
+<x-heroicon-o-pause class="w-5 h-5" />
+```
+
+---
+
+## 📦 **Configuração e Dependências**
+
+### **Dependências Backend (composer.json)**
+```json
+{
+  "require": {
+    "php": "^8.2",
+    "laravel/framework": "^12.0",
+    "laravel/ui": "^4.0"
+  }
+}
+```
+
+### **Dependências Frontend (package.json)**
+```json
+{
+  "dependencies": {
+    "axios": "^1.13.2"
+  },
+  "devDependencies": {
+    "vite": "^7.0.7",
+    "tailwindcss": "^4.0.0",
+    "laravel-vite-plugin": "^2.0.0"
+  }
+}
+```
+
+### **Comandos de Setup**
 ```bash
-# 1. Instalar dependências
+# 1. Instalar dependências PHP
 composer install
 
 # 2. Configurar .env
 cp .env.example .env
 php artisan key:generate
 
-# 3. Executar migrações
+# 3. Criar banco de dados MySQL
+# DB_DATABASE=zenfocos
+# DB_USERNAME=root
+# DB_PASSWORD=
+
+# 4. Rodar migrações
 php artisan migrate
 
-# 4. Popular dados de teste (opcional)
-php artisan db:seed
+# 5. Instalar dependências Node
+npm install
 
-# 5. Executar servidor
+# 6. Build assets (desenvolvimento)
+npm run dev
+
+# 7. Rodar servidor Laravel
 php artisan serve
 ```
 
-Esta base inclui todos os conceitos dos módulos solicitados:
+### **Rodar em Desenvolvimento**
+Terminal 1:
+```bash
+php artisan serve
+# Laravel em http://localhost:8000
+```
 
-- ✅ **Módulo 4**: Roteamento e ciclo de vida
-- ✅ **Módulo 5**: Views com Blade
-- ✅ **Módulo 6**: Estilização (TailwindCSS)
-- ✅ **Módulo 7**: Forms e validação
-- ✅ **Módulo 8**: Autenticação de usuários
+Terminal 2:
+```bash
+npm run dev
+# Vite HMR em http://localhost:5173
+```
+
+**Acessar:** http://localhost:8000
+
+---
+
+## 📊 **Fluxogramas de Negócio**
+
+### **Fluxo: Criar e Executar Pomodoro**
+
+```
+┌──────────────────┐
+│ Usuário cria     │
+│ nova tarefa      │
+│ (título + N      │
+│ pomodoros)       │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Task salva no    │
+│ banco com:       │
+│ status=pending   │
+│ completed=0      │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Usuário clica    │
+│ "Ver Pomodoro"   │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Timer focado     │
+│ exibe 25:00      │
+│ + botão play     │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Clica play       │
+│ → POST /tasks/   │
+│   {id}/start-    │
+│   session        │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Backend:         │
+│ - Cancela sessão │
+│   ativa anterior │
+│ - Cria nova      │
+│   session        │
+│   (active)       │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Timer JavaScript │
+│ conta 25min      │
+│ (tick local)     │
+└────────┬─────────┘
+         │
+         ├─── Pausar? ───┐
+         │                │
+         ▼                ▼
+┌──────────────┐   ┌────────────────┐
+│ Timer chega  │   │ POST /sessions/│
+│ a 00:00      │   │ {id}/pause     │
+│              │   │ (salva tempo   │
+│              │   │  restante)     │
+└──────┬───────┘   └────────┬───────┘
+       │                    │
+       ▼                    ▼
+┌──────────────┐   ┌────────────────┐
+│ POST         │   │ Pausado.       │
+│ /sessions/   │   │ Retomar?       │
+│ {id}/        │   │ → POST resume  │
+│ complete     │   └────────────────┘
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ Backend:     │
+│ - session.   │
+│   status=    │
+│   completed  │
+│ - task.      │
+│   completed_ │
+│   pomodoros++│
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ Alerta:      │
+│ "Pomodoro    │
+│ concluído!"  │
+│ Reload page  │
+└──────────────┘
+```
+
+---
+
+### **Fluxo: Pular Sessão (Skip)**
+
+```
+┌──────────────────┐
+│ Timer rodando ou │
+│ parado           │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Clica "Pular"    │
+│ → Modal confirma │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Confirma skip    │
+│ → JS busca       │
+│   /active-       │
+│   session        │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Se existe sessão:│
+│ POST /sessions/  │
+│ {id}/complete    │
+│                  │
+│ Se NÃO existe:   │
+│ PUT /tasks/{id}  │
+│ (incrementa      │
+│  completed_      │
+│  pomodoros)      │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Reload página    │
+└──────────────────┘
+```
+
+---
+
+## 🔄 **Próximas Evoluções Planejadas**
+
+1. **Migração completa para React:**
+   - Implementar hooks de API (`useTaskList`, `useTask`, `useSessions`)
+   - Converter `TaskCard` e `TaskForm` para componentes React
+   - Migrar timer focado para React com Zustand
+
+2. **Real-time com SSE:**
+   - Implementar `/timer/stream` (EventSource)
+   - Substituir polling por push notifications
+
+3. **Relatórios e Estatísticas:**
+   - Dashboard com gráficos de pomodoros por dia/semana
+   - Tempo médio de foco
+   - Taxa de conclusão de tarefas
+
+4. **Notificações:**
+   - Notificações desktop quando pomodoro completar
+   - Som customizável
+
+5. **Break Timer:**
+   - Timer de pausa (5 minutos curto / 15 minutos longo)
+   - Ciclo completo: 4 pomodoros → pausa longa
